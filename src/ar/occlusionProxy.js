@@ -28,10 +28,16 @@ import * as THREE from 'three'
 /**
  * How much taller the depth cylinder is than the tracked label band.
  *
- * The label band is 52mm; the bottle including cap and base is ~92mm, so 1.77 matches
- * the real object rather than inflating it.
+ * The label band is 52mm; the bottle including cap and base is ~109mm from the base to
+ * the top of the cap dome, so 2.10 covers the whole object.
+ *
+ * This MUST reach at least as high as the tallest thing the animations draw. The settle
+ * aura follows the bottle silhouette up over the cap dome (+1.32 label heights); if the
+ * proxy stopped short of that, the aura's FAR wall would have no depth behind it and
+ * would draw straight over the cap — which, under additive blending, reads as a bright
+ * band floating above the bottle.
  */
-export const HEIGHT_SCALE = 1.77
+export const HEIGHT_SCALE = 2.20
 
 /**
  * How far the proxy is raised, as a fraction of the label height.
@@ -42,7 +48,7 @@ export const HEIGHT_SCALE = 1.77
  * of the table surface where there is no bottle to hide them. Offsetting upward by half
  * that difference puts the depth volume where the object actually is.
  */
-export const Y_OFFSET_SCALE = 0.155
+export const Y_OFFSET_SCALE = 0.27
 
 export const createOcclusionProxy = () => {
   const group = new THREE.Group()

@@ -152,15 +152,15 @@ export const createSettleEffect = (config = {}) => {
       [-0.70, 0.99, 0.7],
       [-0.50, 1.00, 1.0],
       [0.50, 1.00, 1.0],    // top of the label band
-      [0.62, 0.98, 1.0],    // shoulder begins
-      [0.78, 0.88, 0.95],   // shoulder curve
-      [0.90, 0.76, 0.9],    // neck
-      [0.98, 0.74, 0.9],
-      [1.04, 0.86, 0.85],   // cap flares out
-      [1.20, 0.87, 0.8],    // cap wall
-      [1.26, 0.80, 0.5],    // cap dome starts
-      [1.30, 0.62, 0.2],
-      [1.32, 0.40, 0.0],    // dome closes: fades out
+      [0.66, 0.99, 1.0],    // shoulder: this bottle barely tapers
+      [0.80, 0.96, 0.95],
+      [0.90, 0.92, 0.9],    // short neck, only a slight waist
+      [0.98, 0.93, 0.9],    // cap sits down over the neck
+      [1.06, 0.95, 0.85],   // cap wall, nearly as wide as the label
+      [1.22, 0.94, 0.8],
+      [1.28, 0.86, 0.5],    // cap dome starts
+      [1.31, 0.66, 0.2],
+      [1.33, 0.40, 0.0],    // dome closes: fades out
     ]
 
     /**
