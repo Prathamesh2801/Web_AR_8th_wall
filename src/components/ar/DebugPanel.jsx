@@ -111,11 +111,6 @@ export const DebugPanel = ({tracking}) => {
               below because it is independent of them. */}
           <Row label="Animations" value={orbital.animations ?? 'none'} />
 
-          {/* Text rows only exist while the brand-text animation is running. */}
-          {orbital.textPanels != null && (
-            <Row label="Text panels" value={orbital.textPanels} />
-          )}
-
           {/* Orbit rows only exist while an orbital animation is running. */}
           {orbital.ringCount != null && (
             <>

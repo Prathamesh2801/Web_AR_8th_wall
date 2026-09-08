@@ -12,10 +12,8 @@
  * without reaching back into the config module.
  */
 import {AnimationId} from '../../config'
-import {createBrandTextSystem} from '../brandTextSystem'
 import {createNutrientSystem} from '../nutrientSystem'
 
 export const ANIMATION_FACTORIES = {
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
-  [AnimationId.BRAND_TEXT]: createBrandTextSystem,
 }

@@ -44,7 +44,6 @@
 /** Stable ids, so debug output and config keys cannot drift apart. */
 export const AnimationId = {
   NUTRIENT_ORBIT: 'nutrientOrbit',
-  BRAND_TEXT: 'brandText',
 }
 
 export const ANIMATIONS = {
@@ -53,19 +52,8 @@ export const ANIMATIONS = {
    * tappable nodes. See nutrientSystem.js for the solved ring geometry.
    */
   [AnimationId.NUTRIENT_ORBIT]: {
-    enabled: false,
-    label: 'Nutrient orbit',
-  },
-
-  /**
-   * Brand copy floating to the left, right and above the bottle, with a staggered
-   * fade-in, slow drift, and yaw-billboarding so the panels swing around the product
-   * as you walk about it. All copy is transcribed verbatim from the pack artwork —
-   * see brandTextData.js.
-   */
-  [AnimationId.BRAND_TEXT]: {
     enabled: true,
-    label: 'Brand text',
+    label: 'Nutrient orbit',
   },
 }
 
