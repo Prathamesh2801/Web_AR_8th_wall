@@ -163,19 +163,22 @@ export const createBottleScene = ({onSelect} = {}) => {
     for (const {instance} of animations) instance.update(timeMs, camera)
   }
 
-  /** Debug info from every animation, merged and tagged with the enabled set. */
-  const getDebugInfo = () => {
-    const merged = animations.reduce(
+  /**
+   * Debug info from every animation, merged with the occluder's own status.
+   *
+   * Deliberately NOT null when no animation is enabled. Occlusion is independent of the
+   * animations, so its status must still be reported with them all switched off —
+   * otherwise the panel's whole debug section disappears and the outline looks broken
+   * even though it is working.
+   */
+  const getDebugInfo = () => ({
+    ...animations.reduce(
       (acc, {instance}) => ({...acc, ...(instance.getDebugInfo?.() ?? {})}),
       {}
-    )
-    if (!Object.keys(merged).length) return null
-    return {
-      ...merged,
-      animations: animations.map(a => a.id).join(', ') || 'none',
-      occlusionEnabled: OCCLUSION.enabled && occluder.isEnabled(),
-    }
-  }
+    ),
+    animations: animations.map(a => a.id).join(', ') || 'none',
+    occlusionEnabled: OCCLUSION.enabled && occluder.isEnabled(),
+  })
 
   /**
    * Reveals the wireframe of the invisible occlusion cylinder.

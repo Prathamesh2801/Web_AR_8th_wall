@@ -105,14 +105,24 @@ export const DebugPanel = ({tracking}) => {
 
       {orbital && (
         <div className="mt-2 space-y-1 border-t border-white/10 pt-2">
-          <div className="mb-1 text-white/35">ORBIT DEBUG</div>
-          <Row label="Nutrients" value={orbital.nutrientCount} />
-          <Row label="Connections" value={orbital.connectionCount} />
-          <Row label="Rings" value={orbital.ringCount} />
-          {/* speedScale is the automatic selection slow-down; userSpeed is the
-              multiplier set in DebugControls. They multiply together. */}
-          <Row label="Speed (auto)" value={`${orbital.speedScale}x`} />
-          <Row label="Speed (user)" value={`${orbital.userSpeed ?? 1}x`} />
+          <div className="mb-1 text-white/35">SCENE DEBUG</div>
+
+          {/* Which animations config.js switched on. Occlusion is reported separately
+              below because it is independent of them. */}
+          <Row label="Animations" value={orbital.animations ?? 'none'} />
+
+          {/* Orbit rows only exist while an orbital animation is running. */}
+          {orbital.ringCount != null && (
+            <>
+              <Row label="Nutrients" value={orbital.nutrientCount} />
+              <Row label="Connections" value={orbital.connectionCount} />
+              <Row label="Rings" value={orbital.ringCount} />
+              {/* speedScale is the automatic selection slow-down; userSpeed is the
+                  multiplier set in DebugControls. They multiply together. */}
+              <Row label="Speed (auto)" value={`${orbital.speedScale}x`} />
+              <Row label="Speed (user)" value={`${orbital.userSpeed ?? 1}x`} />
+            </>
+          )}
 
           {/* One block per ring: radii, tilt and travel direction as actually built. */}
           {orbital.rings?.map((r, i) => (
