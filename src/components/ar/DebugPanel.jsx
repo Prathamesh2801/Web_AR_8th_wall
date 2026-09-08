@@ -111,6 +111,16 @@ export const DebugPanel = ({tracking}) => {
               below because it is independent of them. */}
           <Row label="Animations" value={orbital.animations ?? 'none'} />
 
+          {/* Settle rows only exist while the SETTLE animation is running. */}
+          {orbital.settlePhase != null && (
+            <>
+              <Row label="Settle phase" value={orbital.settlePhase} />
+              <Row label="Settle progress" value={orbital.settleProgress} />
+              <Row label="Settle particles" value={orbital.settleParticles} />
+              <Row label="Energy speed" value={`${orbital.settleEnergySpeed}x`} />
+            </>
+          )}
+
           {/* Orbit rows only exist while an orbital animation is running. */}
           {orbital.ringCount != null && (
             <>

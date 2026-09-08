@@ -43,8 +43,9 @@
 
 /** Stable ids, so debug output and config keys cannot drift apart. */
 export const AnimationId = {
-  NUTRIENT_ORBIT: 'nutrientOrbit',
-}
+  NUTRIENT_ORBIT: "nutrientOrbit",
+  SETTLE: "settle",
+};
 
 export const ANIMATIONS = {
   /**
@@ -52,10 +53,45 @@ export const ANIMATIONS = {
    * tappable nodes. See nutrientSystem.js for the solved ring geometry.
    */
   [AnimationId.NUTRIENT_ORBIT]: {
-    enabled: true,
-    label: 'Nutrient orbit',
+    enabled: false,
+    label: "Nutrient orbit",
   },
-}
+
+  /**
+   * Animation #12 — SETTLE. Warm golden energy gathers around the physical bottle,
+   * peaks, then settles into a calm premium aura. See settleEffect.js.
+   *
+   * Every value below is a visual tuning knob; the implementation reads them all so
+   * the look can be adjusted here rather than in the animation code.
+   */
+  [AnimationId.SETTLE]: {
+    enabled: true,
+    label: "Settle",
+
+    // Palette
+    glowColor: "#FFD45A", // primary gold
+    highlightColor: "#FFF1A8", // bright edge highlight
+    deepColor: "#D99A22", // deep warm gold, outer aura and base
+    emberColor: "#FFF8D6", // very soft warm white sparks
+
+    // Timing
+    entranceDuration: 2000, // ms for the full entrance, peak at ~60%
+    energySpeed: 1.6, // ribbon revolutions per second at peak
+
+    // Aura shell radii, as multiples of the tracked bottle radius
+    innerGlowScale: 1.01,
+    middleGlowScale: 1.035,
+    outerGlowScale: 1.08,
+
+    // Embers
+    particleCount: 160,
+    particleSpread: 1.2, // outermost particle radius, in bottle radii
+
+    // Resting state
+    finalAuraOpacity: 0.3, // steady rim intensity after settling
+    finalPulseSpeed: 0.55, // rad/s of the resting breath
+  },
+};
 
 /**
  * The invisible depth cylinder that hides content passing behind the bottle.
@@ -70,21 +106,21 @@ export const OCCLUSION = {
   enabled: true,
   /** Wireframe visible on load. The debug controls toggle it at runtime. */
   showOutline: false,
-}
+};
 
 /** Debug UI defaults. The DEBUG button and controls still override these at runtime. */
 export const DEBUG = {
   panelOpenOnLoad: false,
   /** Starting orbit-speed multiplier; the controls panel changes it live. */
   orbitSpeed: 1,
-}
+};
 
 /** True when the named animation is switched on. */
-export const isAnimationEnabled = id => Boolean(ANIMATIONS[id]?.enabled)
+export const isAnimationEnabled = (id) => Boolean(ANIMATIONS[id]?.enabled);
 
 /** Config for one animation, or an empty object so callers can destructure safely. */
-export const animationConfig = id => ANIMATIONS[id] ?? {}
+export const animationConfig = (id) => ANIMATIONS[id] ?? {};
 
 /** Ids of every enabled animation, in declaration order. */
 export const enabledAnimationIds = () =>
-  Object.keys(ANIMATIONS).filter(id => ANIMATIONS[id].enabled)
+  Object.keys(ANIMATIONS).filter((id) => ANIMATIONS[id].enabled);

@@ -13,7 +13,9 @@
  */
 import {AnimationId} from '../../config'
 import {createNutrientSystem} from '../nutrientSystem'
+import {createSettleEffect} from '../settleEffect'
 
 export const ANIMATION_FACTORIES = {
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
+  [AnimationId.SETTLE]: createSettleEffect,
 }

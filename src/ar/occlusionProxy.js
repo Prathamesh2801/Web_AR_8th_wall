@@ -31,7 +31,7 @@ import * as THREE from 'three'
  * The label band is 52mm; the bottle including cap and base is ~92mm, so 1.77 matches
  * the real object rather than inflating it.
  */
-const HEIGHT_SCALE = 1.77
+export const HEIGHT_SCALE = 1.77
 
 /**
  * How far the proxy is raised, as a fraction of the label height.
@@ -42,7 +42,7 @@ const HEIGHT_SCALE = 1.77
  * of the table surface where there is no bottle to hide them. Offsetting upward by half
  * that difference puts the depth volume where the object actually is.
  */
-const Y_OFFSET_SCALE = 0.155
+export const Y_OFFSET_SCALE = 0.155
 
 export const createOcclusionProxy = () => {
   const group = new THREE.Group()
