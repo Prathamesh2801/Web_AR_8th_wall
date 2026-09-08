@@ -51,6 +51,9 @@ export const createBottleScene = ({onSelect} = {}) => {
 
   let camera = null
   let canvas = null
+  // Set once by fitToGeometry; see the comment there for why this must not be derived
+  // from the animations' own built state.
+  let hasFitted = false
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
 
@@ -123,10 +126,21 @@ export const createBottleScene = ({onSelect} = {}) => {
    * geometry. Runs once; all are sized from the same real measurements.
    */
   const fitToGeometry = (geometry) => {
-    if (animations.length && animations.every(a => a.instance.isBuilt?.())) return
+    /*
+     * `reality.imageupdated` fires every tracked frame, so this runs continuously —
+     * it must be idempotent. The guard is a plain "have we already fitted?" flag rather
+     * than a check over the animations: when no animation is enabled the old
+     * `animations.length && ...` condition was falsy, so the body re-ran every frame and
+     * `setOutlineVisible(OCCLUSION.showOutline)` kept resetting the user's toggle back
+     * to its config default ~30 times a second. The outline switched on and was wiped
+     * before the next frame drew.
+     */
+    if (hasFitted) return
+    hasFitted = true
 
     if (OCCLUSION.enabled) {
       occluder.build(geometry)
+      // Applied ONCE, here, so this is a starting value and not a per-frame override.
       occluder.setOutlineVisible(OCCLUSION.showOutline)
     }
 
