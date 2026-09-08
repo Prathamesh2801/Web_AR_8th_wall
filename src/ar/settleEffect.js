@@ -33,6 +33,7 @@
 import * as THREE from 'three'
 
 import {HEIGHT_SCALE, Y_OFFSET_SCALE} from './occlusionProxy'
+import {RenderOrder} from './renderOrder'
 
 /** Parses "#RRGGBB" (or a number) into a THREE.Color-compatible hex. */
 const toHex = (value, fallback) => {
@@ -270,6 +271,9 @@ export const createSettleEffect = (config = {}) => {
         blending: THREE.AdditiveBlending,
       })
       const mesh = new THREE.Mesh(buildShell(spec.scale), material)
+      // Explicit order: transparent surfaces cannot depth-sort against each other, so
+      // leaving this at 0 lets three.js reorder it by camera distance every frame.
+      mesh.renderOrder = RenderOrder.SETTLE_AURA
       root.add(mesh)
       return {mesh, material, peak: spec.opacity}
     })
@@ -322,6 +326,7 @@ export const createSettleEffect = (config = {}) => {
       blending: THREE.AdditiveBlending,
     })
     const ribbon = new THREE.Line(ribbonGeo, ribbonMat)
+    ribbon.renderOrder = RenderOrder.SETTLE_RIBBON
     root.add(ribbon)
 
     // ------------------------------------------------------------ LAYER 3: embers
@@ -412,6 +417,7 @@ export const createSettleEffect = (config = {}) => {
       blending: THREE.AdditiveBlending,
     })
     const embers = new THREE.Points(emberGeo, emberMat)
+    embers.renderOrder = RenderOrder.SETTLE_EMBERS
     root.add(embers)
 
     // -------------------------------------------------------- LAYER 4: base glow
@@ -474,6 +480,7 @@ export const createSettleEffect = (config = {}) => {
      * shader now puts peak brightness at the bottom of the shell — hanging it lower
      * would pool the light on the table instead of on the product.
      */
+    baseGlow.renderOrder = RenderOrder.SETTLE_BASE_GLOW
     baseGlow.scale.set(r * 1.09, height * 1.02, r * 1.09)
     baseGlow.position.y = -height * 0.27
     root.add(baseGlow)

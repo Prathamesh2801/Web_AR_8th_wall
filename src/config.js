@@ -53,7 +53,7 @@ export const ANIMATIONS = {
    * tappable nodes. See nutrientSystem.js for the solved ring geometry.
    */
   [AnimationId.NUTRIENT_ORBIT]: {
-    enabled: false,
+    enabled: true,
     label: "Nutrient orbit",
   },
 

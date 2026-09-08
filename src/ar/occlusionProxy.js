@@ -25,6 +25,8 @@
  */
 import * as THREE from 'three'
 
+import {RenderOrder} from './renderOrder'
+
 /**
  * How much taller the depth cylinder is than the tracked label band.
  *
@@ -97,7 +99,7 @@ export const createOcclusionProxy = () => {
       })
     )
     // Drawn before the orbital content so its depth is already present.
-    mesh.renderOrder = -1
+    mesh.renderOrder = RenderOrder.OCCLUDER
     mesh.position.y = yOffset
     group.add(mesh)
     enabled = true
@@ -136,7 +138,7 @@ export const createOcclusionProxy = () => {
       depthWrite: false,
     })
     // Drawn after everything else so it is never hidden by the orbital content.
-    const RENDER_ORDER = 999
+    const RENDER_ORDER = RenderOrder.OUTLINE
 
     // Top and bottom rims.
     for (const [r, y] of [[rt, proxyHeight / 2], [rb, -proxyHeight / 2]]) {

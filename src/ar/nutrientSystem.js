@@ -20,6 +20,8 @@
  */
 import * as THREE from 'three'
 
+import {RenderOrder} from './renderOrder'
+
 import {NUTRIENTS, CONNECTIONS, GROUP_COLOR} from './nutrientData'
 
 /*
@@ -117,6 +119,10 @@ const makeLabel = (text, worldWidth, color) => {
       depthTest: true,
     })
   )
+  // Text draws last so it stays readable over the glow it sits in front of. Without an
+  // explicit order this sprite's quad was reordered by camera distance every frame,
+  // which made it flicker against the settle aura.
+  sprite.renderOrder = RenderOrder.LABEL
   sprite.scale.set(worldWidth, worldWidth * 0.5, 1)
   sprite.material.color.setHex(color)
   return sprite
@@ -204,6 +210,7 @@ export const createNutrientSystem = () => {
           color: 0xbfe9ff, transparent: true, opacity: 0, depthWrite: false, depthTest: true,
         })
       )
+      pathLine.renderOrder = RenderOrder.ORBIT_PATH
       group.add(pathLine)
 
       return {cfg, group, pathLine, rx, rz}
@@ -221,6 +228,7 @@ export const createNutrientSystem = () => {
         color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, depthTest: true,
       })
     )
+    highlight.renderOrder = RenderOrder.NODE_CORE
     orbitGroup.add(highlight)
 
     // --- Nutrient nodes: shared geometry, one material each (per-node opacity) ---
@@ -273,6 +281,7 @@ export const createNutrientSystem = () => {
       )
       sphere.scale.setScalar(n.size)
       sphere.userData.nutrientId = n.id
+      sphere.renderOrder = RenderOrder.NODE_CORE
       group.add(sphere)
 
       // Soft halo. depthWrite off so overlapping halos don't punch holes in each other.
@@ -287,6 +296,7 @@ export const createNutrientSystem = () => {
         })
       )
       glow.scale.setScalar(n.size)
+      glow.renderOrder = RenderOrder.NODE_HALO
       group.add(glow)
 
       // Generous invisible hit area keeps nodes tappable on a phone.
@@ -348,6 +358,7 @@ export const createNutrientSystem = () => {
           color: palette.glow, transparent: true, opacity: 0, depthWrite: false, depthTest: true,
         })
       )
+      line.renderOrder = RenderOrder.ORBIT_TETHER
       n.ring.group.add(line)
       tethers.push({node: n, line})
     }
@@ -367,6 +378,7 @@ export const createNutrientSystem = () => {
           color: 0xa8e4ff, transparent: true, opacity: 0, depthWrite: false, depthTest: true,
         })
       )
+      line.renderOrder = RenderOrder.ORBIT_TETHER
       root.add(line)
       connections.push({a, b, line, phase: connections.length * 1.1})
     }
@@ -378,6 +390,7 @@ export const createNutrientSystem = () => {
         color: 0xbfe9ff, transparent: true, opacity: 0, depthWrite: false, depthTest: true,
       })
     )
+    coreGlow.renderOrder = RenderOrder.SETTLE_BASE_GLOW
     root.add(coreGlow)
 
     // NOTE: there is no single `pathLine` any more — each ring owns its own guide
