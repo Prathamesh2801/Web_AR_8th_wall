@@ -131,29 +131,137 @@ export const createSettleEffect = (config = {}) => {
      * sleeve rather than a rim of light. Drawing the far wall lets the glow appear to
      * wrap the silhouette.
      */
-    const auraGeo = new THREE.CylinderGeometry(1, 1, 1, 48, 1, true)
+    /*
+     * SILHOUETTE, NOT A CYLINDER.
+     *
+     * A straight cylinder scaled to the bottle's full height cuts a hard flat ring
+     * across the domed cap and stops abruptly at the base — the glow ends mid-cap
+     * instead of following the product. The image target legitimately describes only
+     * the 52mm label band (that is what an image target IS), so the bottle's shoulder,
+     * neck and cap have to be modelled here.
+     *
+     * PROFILE is the bottle's radius as a fraction of the label radius, sampled up the
+     * object: straight through the label, tucking in at the shoulder, narrow at the
+     * neck, flaring back out for the cap, then closing over the dome. `y` is a fraction
+     * of the label height, measured from the label's centre — so the whole profile
+     * still scales from the tracked geometry and nothing is expressed in millimetres.
+     */
+    const PROFILE = [
+      // y (in label heights)   radius (x label radius)   alpha (edge fade)
+      [-0.78, 0.94, 0.0],   // just under the base: fades out
+      [-0.70, 0.99, 0.7],
+      [-0.50, 1.00, 1.0],
+      [0.50, 1.00, 1.0],    // top of the label band
+      [0.62, 0.98, 1.0],    // shoulder begins
+      [0.78, 0.88, 0.95],   // shoulder curve
+      [0.90, 0.76, 0.9],    // neck
+      [0.98, 0.74, 0.9],
+      [1.04, 0.86, 0.85],   // cap flares out
+      [1.20, 0.87, 0.8],    // cap wall
+      [1.26, 0.80, 0.5],    // cap dome starts
+      [1.30, 0.62, 0.2],
+      [1.32, 0.40, 0.0],    // dome closes: fades out
+    ]
+
+    /**
+     * Builds one shell of the aura by lathing PROFILE at a given radial offset.
+     *
+     * Per-vertex alpha carries the end fade, so the glow dissolves at the base and over
+     * the cap instead of terminating on a hard rim. A uniform-opacity material cannot
+     * do this, which is why these use a small shader.
+     */
+    const buildShell = (radiusScale) => {
+      const seg = 48
+      const rings = PROFILE.length
+      const pos = new Float32Array(rings * (seg + 1) * 3)
+      const alpha = new Float32Array(rings * (seg + 1))
+      const idx = []
+
+      for (let ri = 0; ri < rings; ri++) {
+        const [py, pr, pa] = PROFILE[ri]
+        const y = py * height          // profile y is in label heights
+        const rad = pr * r * radiusScale
+        for (let si = 0; si <= seg; si++) {
+          const a = (si / seg) * Math.PI * 2
+          const v = ri * (seg + 1) + si
+          pos[v * 3] = Math.cos(a) * rad
+          pos[v * 3 + 1] = y
+          pos[v * 3 + 2] = Math.sin(a) * rad
+          alpha[v] = pa
+        }
+      }
+      for (let ri = 0; ri < rings - 1; ri++) {
+        for (let si = 0; si < seg; si++) {
+          const a = ri * (seg + 1) + si
+          const b = a + seg + 1
+          idx.push(a, b, a + 1, a + 1, b, b + 1)
+        }
+      }
+
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+      geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1))
+      geo.setIndex(idx)
+      return geo
+    }
+
+    /*
+     * Peaks are higher than the previous flat-fill values because the rim term
+     * concentrates light into the silhouette edges and discards most of the face —
+     * the same numbers would render almost invisible.
+     */
     const auraSpec = [
-      {scale: cfg.innerGlowScale, color: COLOR.highlight, opacity: 0.55},
-      {scale: cfg.middleGlowScale, color: COLOR.glow, opacity: 0.3},
-      {scale: cfg.outerGlowScale, color: COLOR.deep, opacity: 0.16},
+      {scale: cfg.innerGlowScale, color: COLOR.highlight, opacity: 1.15},
+      {scale: cfg.middleGlowScale, color: COLOR.glow, opacity: 0.7},
+      {scale: cfg.outerGlowScale, color: COLOR.deep, opacity: 0.4},
     ]
     const auraShells = auraSpec.map((spec) => {
-      const mesh = new THREE.Mesh(
-        auraGeo,
-        new THREE.MeshBasicMaterial({
-          color: spec.color,
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-          depthTest: true,          // occluded by the proxy like everything else
-          side: THREE.BackSide,
-          blending: THREE.AdditiveBlending,
-        })
-      )
-      mesh.scale.set(r * spec.scale, bodyHeight, r * spec.scale)
-      mesh.position.y = bodyY
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: {value: new THREE.Color(spec.color)},
+          uOpacity: {value: 0},
+        },
+        vertexShader: `
+          attribute float aAlpha;
+          varying float vAlpha;
+          varying vec3 vNormalView;
+          varying vec3 vPosView;
+          void main() {
+            vAlpha = aAlpha;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vPosView = mv.xyz;
+            // Surface normal of a lathed shell points radially outward.
+            vNormalView = normalize(normalMatrix * vec3(position.x, 0.0, position.z));
+            gl_Position = projectionMatrix * mv;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          uniform float uOpacity;
+          varying float vAlpha;
+          varying vec3 vNormalView;
+          varying vec3 vPosView;
+          void main() {
+            /*
+             * Fresnel-style rim: brightest where the surface turns away from the
+             * viewer, i.e. at the silhouette edges. This is what makes the glow read
+             * as light wrapping the product rather than a translucent skin over it.
+             */
+            vec3 viewDir = normalize(-vPosView);
+            float facing = abs(dot(normalize(vNormalView), viewDir));
+            float rim = pow(1.0 - facing, 2.2);
+            gl_FragColor = vec4(uColor, rim * vAlpha * uOpacity);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        depthTest: true,            // occluded by the proxy like everything else
+        side: THREE.DoubleSide,     // rim shading needs both walls
+        blending: THREE.AdditiveBlending,
+      })
+      const mesh = new THREE.Mesh(buildShell(spec.scale), material)
       root.add(mesh)
-      return {mesh, peak: spec.opacity}
+      return {mesh, material, peak: spec.opacity}
     })
 
     // ------------------------------------------------------- LAYER 2: energy ribbon
@@ -227,8 +335,13 @@ export const createSettleEffect = (config = {}) => {
     const pSpeed = new Float32Array(N)
 
     // Particles live between just below the base and well above the cap.
-    const yBottom = bodyY - bodyHeight * 0.5 - height * 0.1
-    const ySpan = bodyHeight * 1.15
+    /*
+     * Expressed against the PROFILE's own extents (label heights) so the embers rise
+     * along the bottle and drift off just above the cap, rather than being sized from
+     * the straight proxy cylinder, which ended mid-cap.
+     */
+    const yBottom = -height * 0.78
+    const ySpan = height * 2.25
 
     const rnd = rand(20250908)
     for (let i = 0; i < N; i++) {
@@ -297,20 +410,54 @@ export const createSettleEffect = (config = {}) => {
      * settles. Deliberately a shell around the bottle, NOT a disc underneath it: a disc
      * would read as a platform the bottle is standing on.
      */
-    const baseGlow = new THREE.Mesh(
-      new THREE.CylinderGeometry(1, 1, 1, 40, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: COLOR.deep,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        depthTest: true,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-      })
-    )
-    baseGlow.scale.set(r * 1.14, bodyHeight * 0.42, r * 1.14)
-    baseGlow.position.y = bodyY - bodyHeight * 0.26
+    const baseGeo = new THREE.CylinderGeometry(1, 1, 1, 40, 24, true)
+    const baseMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: {value: new THREE.Color(COLOR.deep)},
+        uOpacity: {value: 0},
+      },
+      vertexShader: `
+        varying float vY;
+        varying vec3 vNormalView;
+        varying vec3 vPosView;
+        void main() {
+          // Local y runs -0.5..0.5 on a unit cylinder; remap to 0..1 for the fade.
+          vY = position.y + 0.5;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vPosView = mv.xyz;
+          vNormalView = normalize(normalMatrix * vec3(position.x, 0.0, position.z));
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        varying float vY;
+        varying vec3 vNormalView;
+        varying vec3 vPosView;
+        void main() {
+          // Vertical falloff: strongest low down, gone by the top. Without this the
+          // shell ends on a hard rim, which reads as a band rather than pooled light.
+          float vertical = smoothstep(1.0, 0.15, vY) * smoothstep(0.0, 0.12, vY);
+          vec3 viewDir = normalize(-vPosView);
+          float rim = pow(1.0 - abs(dot(normalize(vNormalView), viewDir)), 2.0);
+          gl_FragColor = vec4(uColor, rim * vertical * uOpacity);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    })
+    const baseGlow = new THREE.Mesh(baseGeo, baseMat)
+    /*
+     * Spans the base up to just above the label's centre. Sized so the shell's lower
+     * edge lands on the bottle's base rather than hanging below it into the table —
+     * the vertical falloff in the shader has already faded it to nothing by then.
+     */
+    baseGlow.scale.set(r * 1.16, height * 1.3, r * 1.16)
+    baseGlow.position.y = -height * 0.13
     root.add(baseGlow)
 
     state = {
@@ -390,7 +537,10 @@ export const createSettleEffect = (config = {}) => {
       const shell = state.auraShells[i]
       const delay = 0.15 + i * 0.12
       const local = THREE.MathUtils.clamp((age - delay) / 0.7, 0, 1)
-      shell.mesh.material.opacity = shell.peak * envelope * easeOut(local) * breath
+      // Shader uniform, not material.opacity: these shells carry per-vertex alpha for
+      // the end fade, so brightness is driven through the shader instead.
+      shell.material.uniforms.uOpacity.value =
+        shell.peak * envelope * easeOut(local) * breath
     }
 
     // ---------------------------------------------------------------- ribbon
@@ -457,7 +607,8 @@ export const createSettleEffect = (config = {}) => {
 
     // -------------------------------------------------------------- base glow
     const baseIn = THREE.MathUtils.clamp((age - 0.35) / 0.8, 0, 1)
-    state.baseGlow.material.opacity = 0.26 * envelope * easeOut(baseIn) * breath
+    state.baseGlow.material.uniforms.uOpacity.value =
+      0.85 * envelope * easeOut(baseIn) * breath
 
   }
 
