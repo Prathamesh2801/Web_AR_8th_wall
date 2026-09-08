@@ -144,6 +144,11 @@ export const createSettleEffect = (config = {}) => {
      * is both more honest about what is tracked and closer to how a real practical light
      * behaves around a product: it rakes the body, it does not halo the lid.
      *
+     * Both ends CURVE INWARD rather than stopping at full width. A profile that ends at
+     * 95% radius terminates on a vertical cut, which reads as a straight line drawn
+     * across the bottle no matter how low its alpha is; turning the radius over as the
+     * alpha falls is what makes the light wrap the shoulder and tuck under the base.
+     *
      * PROFILE is the bottle's radius as a fraction of the label radius, sampled up the
      * object. `y` is a fraction of the label height measured from the label's centre, so
      * the whole profile still scales from the tracked geometry and nothing here is
@@ -151,15 +156,18 @@ export const createSettleEffect = (config = {}) => {
      */
     const PROFILE = [
       // y (in label heights)   radius (x label radius)   alpha (edge fade)
-      [-0.80, 0.93, 0.0],   // just under the base: fades out
-      [-0.72, 0.98, 0.55],
-      [-0.58, 1.00, 0.9],
-      [-0.30, 1.00, 1.0],
+      [-0.84, 0.72, 0.0],   // under the base: curls in and fades out
+      [-0.80, 0.86, 0.35],
+      [-0.74, 0.95, 0.7],   // base curve
+      [-0.66, 0.99, 0.95],
+      [-0.50, 1.00, 1.0],
       [0.30, 1.00, 1.0],
-      [0.50, 1.00, 0.85],   // top of the label band
-      [0.62, 0.99, 0.5],    // onto the shoulder, already dimming
-      [0.72, 0.97, 0.18],
-      [0.80, 0.95, 0.0],    // gone before the neck: the cap is never lit
+      [0.50, 1.00, 0.92],   // top of the label band
+      [0.60, 0.985, 0.7],   // shoulder begins to turn
+      [0.68, 0.94, 0.45],   // curving inward, following the shoulder round
+      [0.74, 0.86, 0.24],
+      [0.79, 0.74, 0.10],   // tucks in toward the neck
+      [0.83, 0.60, 0.0],    // gone before the cap: the cap is never lit
     ]
 
     /**
@@ -438,9 +446,16 @@ export const createSettleEffect = (config = {}) => {
         varying vec3 vNormalView;
         varying vec3 vPosView;
         void main() {
-          // Vertical falloff: strongest low down, gone by the top. Without this the
-          // shell ends on a hard rim, which reads as a band rather than pooled light.
-          float vertical = smoothstep(1.0, 0.15, vY) * smoothstep(0.0, 0.12, vY);
+          /*
+           * Vertical falloff: brightest AT the base, fading out by the top.
+           *
+           * The lower smoothstep previously ramped up from 0 over vY 0..0.12, which put
+           * zero brightness exactly at the bottle's base and pushed the peak up to
+           * mid-label — so there was no glow at the bottom at all. The pool now starts
+           * at full strength and only fades over the last sliver (0..0.03), which is
+           * just enough to avoid a hard rim where the shell ends.
+           */
+          float vertical = smoothstep(0.85, 0.05, vY) * smoothstep(0.0, 0.03, vY);
           vec3 viewDir = normalize(-vPosView);
           float rim = pow(1.0 - abs(dot(normalize(vNormalView), viewDir)), 3.5);
           gl_FragColor = vec4(uColor, rim * vertical * uOpacity);
@@ -454,12 +469,13 @@ export const createSettleEffect = (config = {}) => {
     })
     const baseGlow = new THREE.Mesh(baseGeo, baseMat)
     /*
-     * Spans the base up to just above the label's centre. Sized so the shell's lower
-     * edge lands on the bottle's base rather than hanging below it into the table —
-     * the vertical falloff in the shader has already faded it to nothing by then.
+     * Spans from the bottle's base up to around the label's centre. The shell's lower
+     * edge sits AT the base (-0.78 label heights) rather than below it, because the
+     * shader now puts peak brightness at the bottom of the shell — hanging it lower
+     * would pool the light on the table instead of on the product.
      */
-    baseGlow.scale.set(r * 1.075, height * 1.15, r * 1.075)
-    baseGlow.position.y = -height * 0.20
+    baseGlow.scale.set(r * 1.09, height * 1.02, r * 1.09)
+    baseGlow.position.y = -height * 0.27
     root.add(baseGlow)
 
     state = {
@@ -610,7 +626,7 @@ export const createSettleEffect = (config = {}) => {
     // -------------------------------------------------------------- base glow
     const baseIn = THREE.MathUtils.clamp((age - 0.35) / 0.8, 0, 1)
     state.baseGlow.material.uniforms.uOpacity.value =
-      0.42 * envelope * easeOut(baseIn) * breath
+      0.72 * envelope * easeOut(baseIn) * breath
 
   }
 
