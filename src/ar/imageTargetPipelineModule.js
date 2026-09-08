@@ -103,6 +103,7 @@ export const createImageTargetPipelineModule = (expectedTargetName) => {
       trackingStore.setDebugInfoProvider(() => bottleScene?.getDebugInfo() ?? null)
       trackingStore.setOutlineVisibilitySetter(v => bottleScene?.setOutlineVisible(v))
       trackingStore.setOrbitSpeedSetter(v => bottleScene?.setOrbitSpeed(v))
+      trackingStore.setSelectionSetter(id => bottleScene?.setSelected(id))
 
       // Required so the engine drives the three.js camera.
       XR8.XrController.updateCameraProjectionMatrix({

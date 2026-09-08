@@ -61,6 +61,16 @@ let outlineVisibilitySetter = null
 let orbitSpeedSetter = null
 
 /**
+ * Supplied by the AR layer to apply the current selection to the 3D scene.
+ *
+ * Selection is cleared from several places (tapping a node, closing the card, losing
+ * the target). Pushing every change through here keeps three.js and React in agreement;
+ * when only the tap path updated three.js, closing the card left the orbit stuck at its
+ * slowed "reading" speed forever.
+ */
+let selectionSetter = null
+
+/**
  * Replace the snapshot and notify subscribers.
  * A new object identity is required for useSyncExternalStore to detect the change.
  */
@@ -112,7 +122,17 @@ export const trackingStore = {
    * Called when a nutrient node is tapped in 3D. Fires on interaction only,
    * never per frame.
    */
-  setSelectedNutrient: (nutrient) => emit({selectedNutrient: nutrient}),
+  setSelectedNutrient: (nutrient) => {
+    // Drive three.js FIRST so the 3D scene can never lag behind the UI, then notify
+    // React. Both sides now change together no matter which path cleared the selection.
+    selectionSetter?.(nutrient?.id ?? null)
+    emit({selectedNutrient: nutrient})
+  },
+
+  /** Registered by the AR layer; see `selectionSetter`. */
+  setSelectionSetter: (fn) => {
+    selectionSetter = fn
+  },
 
   /** Lets the debug panel read orbital stats without the AR layer knowing about React. */
   setDebugInfoProvider: (fn) => {

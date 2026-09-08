@@ -51,8 +51,25 @@ export const createBottleScene = ({onSelect} = {}) => {
     const id = hits[0].object.userData.nutrientId
     if (!id) return
 
-    nutrients.setSelected(id)
+    // Only notify outward. The three.js side is updated by `setSelected` below, which
+    // the store drives — see the comment there for why this must not be set directly.
     onSelect?.(NUTRIENT_BY_ID.get(id) ?? null)
+  }
+
+  /**
+   * Applies the selection to the 3D scene. Driven by the tracking store, which is the
+   * single source of truth for what is selected.
+   *
+   * This exists because the selection can be cleared from THREE places: tapping another
+   * node, closing the card in React, and losing the target. Previously only the tap path
+   * called into three.js, so closing the card updated React but left the 3D system still
+   * believing a node was selected — its orbit stayed at the 0.25x "reading" speed
+   * permanently, and the debug speed multiplier then scaled that reduced value (3x
+   * reached only 0.70x of normal). Routing every path through the store prevents the two
+   * from drifting apart.
+   */
+  const setSelected = (nutrientId) => {
+    nutrients.setSelected(nutrientId)
   }
 
   /** Adds lights + the anchor to the XR scene, and wires tap picking. */
@@ -130,6 +147,6 @@ export const createBottleScene = ({onSelect} = {}) => {
 
   return {
     anchor, addToScene, applyPose, fitToGeometry, hide, update, getDebugInfo,
-    setOutlineVisible, setOrbitSpeed,
+    setOutlineVisible, setOrbitSpeed, setSelected,
   }
 }
