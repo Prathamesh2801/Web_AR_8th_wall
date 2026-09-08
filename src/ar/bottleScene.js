@@ -2,15 +2,21 @@
  * bottleScene.js
  *
  * Owns the three.js content attached to the tracked cylindrical target, and the
- * tap-picking that turns a screen touch into a selected nutrient.
+ * tap-picking that turns a screen touch into a selected item.
+ *
+ * This file knows nothing about any SPECIFIC animation. It builds whichever animations
+ * are switched on in src/config.js, drives them through the shared module contract
+ * documented there, and forwards optional calls only to the modules that implement
+ * them. Adding an animation therefore does not require editing this file.
  *
  * No React. The only outward crossing is `onSelect`, invoked on a successful tap.
  */
 import * as THREE from 'three'
 
-import {createNutrientSystem} from './nutrientSystem'
+import {ANIMATION_FACTORIES} from './animations'
 import {createOcclusionProxy} from './occlusionProxy'
 import {NUTRIENTS} from './nutrientData'
+import {OCCLUSION, enabledAnimationIds, animationConfig} from '../config'
 
 const NUTRIENT_BY_ID = new Map(NUTRIENTS.map(n => [n.id, n]))
 
@@ -20,20 +26,41 @@ export const createBottleScene = ({onSelect} = {}) => {
   anchor.visible = false
 
   // Depth-only stand-in for the physical bottle. Added FIRST so its depth is written
-  // before the orbital content, letting back-side nodes fail the depth test naturally.
+  // before the animated content, letting back-side objects fail the depth test naturally.
   const occluder = createOcclusionProxy()
-  anchor.add(occluder.group)
+  if (OCCLUSION.enabled) anchor.add(occluder.group)
 
-  const nutrients = createNutrientSystem()
-  anchor.add(nutrients.root)
+  /**
+   * The enabled animations, instantiated once at construction.
+   *
+   * An id with no registered factory is reported and skipped rather than throwing: a
+   * typo in config should not take down the whole AR experience.
+   */
+  const animations = enabledAnimationIds().flatMap((id) => {
+    const factory = ANIMATION_FACTORIES[id]
+    if (!factory) {
+      console.warn(`[AR] no factory registered for animation "${id}" - skipping`)
+      return []
+    }
+    const instance = factory(animationConfig(id))
+    anchor.add(instance.root)
+    return [{id, instance}]
+  })
+
+  console.log('[AR] animations enabled:', animations.map(a => a.id))
 
   let camera = null
   let canvas = null
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
 
+  /** Calls `method` on every animation that implements it. */
+  const forEachAnimation = (method, ...args) => {
+    for (const {instance} of animations) instance[method]?.(...args)
+  }
+
   /**
-   * Converts a pointer event to normalised device coordinates and picks a node.
+   * Converts a pointer event to normalised device coordinates and picks an object.
    *
    * Uses the canvas bounding rect rather than window size, so it stays correct
    * regardless of canvas placement or device pixel ratio.
@@ -44,8 +71,12 @@ export const createBottleScene = ({onSelect} = {}) => {
     pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
 
+    // Pickables from every animation that offers any, so more than one can be tappable.
+    const pickables = animations.flatMap(({instance}) => instance.getPickables?.() ?? [])
+    if (!pickables.length) return
+
     raycaster.setFromCamera(pointer, camera)
-    const hits = raycaster.intersectObjects(nutrients.getPickables(), false)
+    const hits = raycaster.intersectObjects(pickables, false)
     if (!hits.length) return
 
     const id = hits[0].object.userData.nutrientId
@@ -69,7 +100,7 @@ export const createBottleScene = ({onSelect} = {}) => {
    * from drifting apart.
    */
   const setSelected = (nutrientId) => {
-    nutrients.setSelected(nutrientId)
+    forEachAnimation('setSelected', nutrientId)
   }
 
   /** Adds lights + the anchor to the XR scene, and wires tap picking. */
@@ -88,13 +119,21 @@ export const createBottleScene = ({onSelect} = {}) => {
   }
 
   /**
-   * Builds the occluder and orbit from the engine's reported cylinder geometry.
-   * Runs once; both are sized from the same real measurements.
+   * Builds the occluder and every enabled animation from the engine's reported cylinder
+   * geometry. Runs once; all are sized from the same real measurements.
    */
   const fitToGeometry = (geometry) => {
-    if (nutrients.isBuilt()) return
-    occluder.build(geometry)
-    if (nutrients.build(geometry)) nutrients.setVisible(true)
+    if (animations.length && animations.every(a => a.instance.isBuilt?.())) return
+
+    if (OCCLUSION.enabled) {
+      occluder.build(geometry)
+      occluder.setOutlineVisible(OCCLUSION.showOutline)
+    }
+
+    for (const {instance} of animations) {
+      if (instance.isBuilt?.()) continue
+      if (instance.build(geometry)) instance.setVisible?.(true)
+    }
   }
 
   /**
@@ -102,8 +141,8 @@ export const createBottleScene = ({onSelect} = {}) => {
    *
    * For CYLINDRICAL/CONICAL targets the engine's reported position/rotation are used
    * DIRECTLY (the planar re-centering correction applies only to FLAT targets). Because
-   * the nutrient system is a CHILD of this anchor, the whole orbital system inherits the
-   * bottle's pose automatically — no transform is duplicated onto individual nodes.
+   * the animations are CHILDREN of this anchor, they inherit the bottle's pose
+   * automatically — no transform is duplicated onto individual objects.
    */
   const applyPose = ({position, rotation, scale}) => {
     anchor.position.set(position.x, position.y, position.z)
@@ -115,34 +154,43 @@ export const createBottleScene = ({onSelect} = {}) => {
   const hide = () => {
     anchor.visible = false
     // Replay the staged entrance next time the bottle is reacquired.
-    nutrients.restartEntrance()
-    nutrients.setSelected(null)
+    forEachAnimation('restartEntrance')
+    forEachAnimation('setSelected', null)
   }
 
   /** Per-frame animation, driven by the AR loop. */
   const update = (timeMs) => {
-    nutrients.update(timeMs, camera)
+    for (const {instance} of animations) instance.update(timeMs, camera)
   }
 
+  /** Debug info from every animation, merged and tagged with the enabled set. */
   const getDebugInfo = () => {
-    const info = nutrients.getDebugInfo()
-    return info ? {...info, occlusionEnabled: occluder.isEnabled()} : null
+    const merged = animations.reduce(
+      (acc, {instance}) => ({...acc, ...(instance.getDebugInfo?.() ?? {})}),
+      {}
+    )
+    if (!Object.keys(merged).length) return null
+    return {
+      ...merged,
+      animations: animations.map(a => a.id).join(', ') || 'none',
+      occlusionEnabled: OCCLUSION.enabled && occluder.isEnabled(),
+    }
   }
 
   /**
    * Reveals the wireframe of the invisible occlusion cylinder.
    *
-   * This is the surface that actually does the hiding, so showing it makes the orbit
-   * verifiable by eye: nodes should pass cleanly outside the wireframe on the near
+   * This is the surface that actually does the hiding, so showing it makes the motion
+   * verifiable by eye: objects should pass cleanly outside the wireframe on the near
    * side and disappear behind it on the far side, never crossing through it.
    */
   const setOutlineVisible = (v) => {
     occluder.setOutlineVisible(v)
   }
 
-  /** Scales orbit speed from the debug controls. 0 freezes the orbit. */
+  /** Scales animation speed from the debug controls. 0 freezes motion. */
   const setOrbitSpeed = (v) => {
-    nutrients.setUserSpeed(v)
+    forEachAnimation('setUserSpeed', v)
   }
 
   return {

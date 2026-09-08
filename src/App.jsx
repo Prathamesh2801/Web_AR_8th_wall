@@ -1,5 +1,6 @@
 import {useCallback, useState} from 'react'
 
+import {DEBUG, OCCLUSION} from './config'
 import {startAR, checkSupport} from './ar/startAR'
 import {TrackingState, trackingStore} from './ar/trackingStore'
 import {useTracking} from './hooks/useTracking'
@@ -24,10 +25,12 @@ export default function App() {
 
   const [started, setStarted] = useState(false)
   const [starting, setStarting] = useState(false)
-  const [debugOn, setDebugOn] = useState(false)
+  // Initial values come from src/config.js so the defaults live in one place; the
+  // DEBUG button and controls panel still change them freely at runtime.
+  const [debugOn, setDebugOn] = useState(DEBUG.panelOpenOnLoad)
   // Independent of `debugOn` so the outline can be toggled while reading the panel.
-  const [outlineOn, setOutlineOn] = useState(false)
-  const [orbitSpeed, setOrbitSpeed] = useState(1)
+  const [outlineOn, setOutlineOn] = useState(OCCLUSION.showOutline)
+  const [orbitSpeed, setOrbitSpeed] = useState(DEBUG.orbitSpeed)
 
   const isTracking = tracking.state === TrackingState.TRACKING
 
