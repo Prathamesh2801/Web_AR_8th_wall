@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="data:," />
+    <title>Supradyn Bottle AR — Cylindrical Image Target POC</title>
+
+    <!--
+      8th Wall open-source engine, loaded from the official CDN builds.
+
+      NOTE: These are loaded as classic scripts (not npm imports) because the engine
+      attaches itself to `window.XR8` and fires a global `xrloaded` event. This mirrors
+      the official examples exactly.
+
+      `data-preload-chunks="slam"` is REQUIRED, even though this POC disables world
+      tracking. In the engine binary `XR8.XrController` is initialised to `null` and is
+      only assigned while loading the "slam" chunk:
+
+          if ("slam" === chunk) { g.XrController = yield XrControllerFactory(...) }
+
+      XrController is also the module that owns IMAGE TARGETS, so without this attribute
+      `XR8.XrController.configure()` throws "Cannot read properties of null". Loading the
+      chunk is not the same as enabling SLAM — world tracking is switched off separately
+      via `XrController.configure({disableWorldTracking: true})` in src/ar/startAR.js.
+
+      The copyright notice inside xr.js must remain unmodified (XR Engine License).
+    -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js"
+      async
+      crossorigin="anonymous"
+      data-preload-chunks="slam"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <!-- The 8th Wall camera pipeline draws directly into this canvas. React never touches it. -->
+    <canvas id="camerafeed"></canvas>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

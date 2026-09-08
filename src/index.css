@@ -1,0 +1,413 @@
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  /*
+   * The AR view is a fixed full-screen canvas, so the page itself never scrolls.
+   * Full-screen overlays (start screen, error screen) are `fixed inset-0` with their
+   * own `overflow-y-auto`, which still scrolls internally on short/landscape
+   * viewports so the primary button is always reachable.
+   */
+  overflow: hidden;
+  background: #0a0a0a;
+  overscroll-behavior: none;
+}
+
+/*
+ * Text selection is disabled only over the AR view, where a long-press would
+ * otherwise pop a selection bubble mid-interaction. UI overlays keep normal
+ * selection so users can copy error messages.
+ */
+#camerafeed {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * The 8th Wall camera feed canvas. XRExtras.FullWindowCanvas sizes it, but these
+ * rules guarantee it fills the viewport and stays behind the React UI layer.
+ */
+#camerafeed {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 10;
+}
+
+/* Entrance for the nutrient information card. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+ * Hide the "Powered by 8th Wall" badge on the loading / permission / fallback screens.
+ *
+ * The badge is markup inside XRExtras and LandingPage (`<img class="poweredby-img">`),
+ * both of which are MIT licensed ("...rights to use, copy, MODIFY, merge, publish,
+ * distribute..."), so hiding it is permitted.
+ *
+ * Note this is NOT the engine's own copyright notice: the XR Engine binary licence
+ * requires its notice in `external/xr/xr.js` to stay intact, and nothing here touches
+ * it. We only load the engine from the CDN, unmodified.
+ *
+ * Hidden rather than deleted so the loading and error screens keep working — they
+ * handle camera permission prompts and the iOS "open in Safari" fallback.
+ */
+.poweredby-img,
+.poweredby-img-8w {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * XRExtras loading / permission screen — restyled to match the start screen.
+ *
+ * XRExtras.Loading injects its own DOM (`#loadingContainer`) with stock 8th Wall
+ * styling: a `#464766` banner pinned to the top of the viewport reading
+ * "Tap 'Allow' to access AR", over a `#101118` background, in Nunito. Against our
+ * start screen that reads as a different product, which is jarring at exactly the
+ * moment the user is deciding whether to trust the camera prompt.
+ *
+ * This is CSS-only and deliberately so. XRExtras is MIT ("...to use, copy, MODIFY..."),
+ * but its module also owns real behaviour — the iOS/Android permission-recovery flows,
+ * the in-app-browser fallback and `XR8.pause()/stop()` — so replacing the module would
+ * mean reimplementing all of it. Restyling by ID keeps every one of those paths intact
+ * and touches no JavaScript, no pipeline ordering and no engine behaviour.
+ *
+ * Selectors mirror the markup in xrextras.js verbatim; the ids are part of its public
+ * DOM contract and are what the module's own stylesheet targets.
+ * ------------------------------------------------------------------------- */
+
+/* Same ambient wash as the start screen, so the transition reads as one surface. */
+#loadBackground {
+  background-color: #0a0a0a !important;
+  background-image:
+    radial-gradient(60% 45% at 50% 18%, rgba(56, 189, 248, 0.16), transparent 70%),
+    radial-gradient(55% 40% at 50% 92%, rgba(16, 185, 129, 0.12), transparent 70%) !important;
+}
+
+#loadingContainer {
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+/*
+ * The permission banner. Stock styling pins it to `top: 0` full-bleed, which is what
+ * made it look bolted on. Here it becomes a centred card that matches the start
+ * screen's step rows: translucent white fill, hairline border, rounded corners.
+ */
+#requestingCameraPermissions {
+  /*
+   * Centred with auto margins inside left/right insets rather than
+   * `left: 50% + translateX(-50%)`. The transform approach cannot work here: the
+   * entrance animation below also animates `transform`, and an animation's value
+   * beats a normal declaration, so the centring offset was being discarded for the
+   * whole animation and never reinstated — leaving the card pinned with its left
+   * edge at the screen midpoint. Margin centring is independent of `transform`,
+   * so the two can no longer fight.
+   */
+  top: auto !important;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 2.25rem) !important;
+  left: 1.25rem !important;
+  right: 1.25rem !important;
+  width: auto !important;
+  max-width: 22rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box;
+  padding: 1rem 1.25rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  /* Backdrop blur keeps it legible once the camera feed appears behind it. */
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-size: 0.9375rem !important;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.92) !important;
+  /* Opacity-only entrance, so nothing competes with layout. */
+  animation: xr-fade-in 0.35s ease-out both;
+}
+
+@keyframes xr-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * The stock icon is a flat grey PNG that clashes with our line-art UI. Hiding the
+ * image and drawing a bordered circle keeps the module's markup untouched while
+ * matching the start screen's step badges.
+ */
+#requestingCameraIcon {
+  display: none !important;
+}
+
+#requestingCameraPermissions::before {
+  content: "📷";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0 auto 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 1rem;
+}
+
+/*
+ * Match the start-screen button's spinner rather than the stock 8th Wall mark.
+ *
+ * `#loadImage` is an <img> whose src is bundled into xrextras, and an <img> cannot be
+ * restyled into a ring — replacing its box via `content` is inconsistent across
+ * browsers. So the image itself is hidden and the ring is drawn on its parent, which
+ * XRExtras keeps in the DOM for the whole load. `.spin` (its own keyframes) stays on
+ * the hidden <img>, so the rotation here is ours.
+ */
+#loadImage {
+  visibility: hidden !important;
+}
+
+#loadImageContainer::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -1.375rem 0 0 -1.375rem;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ffffff;
+  border-radius: 9999px;
+  animation: xr-spin 0.8s linear infinite;
+}
+
+@keyframes xr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * XRExtras camera/microphone permission RECOVERY screens.
+ *
+ * Shown when the user has blocked the camera. The content is genuinely useful —
+ * it is the real Chrome/Samsung settings path — so this restyles it rather than
+ * replacing it. Two real defects are fixed here, not just the palette:
+ *
+ *   1. CLIPPING. The container is `.absolute-fill` + `display:flex` with
+ *      `justify-content: space-around` and no overflow handling. On a phone the
+ *      six steps are taller than the viewport, so the closing line ("...reload the
+ *      page for AR!") was cut off behind the gesture bar with no way to scroll to
+ *      it. Switching to `flex-start` + `overflow-y: auto` and adding safe-area
+ *      padding makes the whole flow reachable.
+ *
+ *   2. DETACHED STEP NUMBERS. The numbered badges are `li:before` with
+ *      `position: absolute; left: -8vh`, a hardcoded offset that places them in a
+ *      column floating away from their text. Re-laying the list out with flex ties
+ *      each number to its own step.
+ *
+ * Everything is vh-based in the original, which is why the type was oversized;
+ * rem/px keep it stable across devices.
+ * ------------------------------------------------------------------------- */
+
+#cameraPermissionsErrorApple,
+#cameraPermissionsErrorAndroid,
+#microphonePermissionsErrorApple,
+#microphonePermissionsErrorAndroid {
+  background-color: #0a0a0a !important;
+  background-image:
+    radial-gradient(60% 45% at 50% 18%, rgba(56, 189, 248, 0.16), transparent 70%),
+    radial-gradient(55% 40% at 50% 92%, rgba(16, 185, 129, 0.12), transparent 70%) !important;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+/* Make the whole recovery flow scrollable and respect the notch / gesture bar. */
+#cameraPermissionsErrorAndroid,
+#microphonePermissionsErrorAndroid {
+  justify-content: flex-start !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 2rem) 1.5rem
+    calc(env(safe-area-inset-bottom, 0px) + 2.5rem) !important;
+}
+
+/* Camera glyph: smaller and dimmed, so the heading leads instead of the icon. */
+#cameraPermissionsErrorAndroid .permissionIcon,
+#microphonePermissionsErrorAndroid .permissionIcon {
+  margin-bottom: 1.25rem !important;
+  opacity: 0.85;
+}
+
+#cameraPermissionsErrorAndroid .permissionIcon img,
+#microphonePermissionsErrorAndroid .permissionIcon img {
+  height: 3rem;
+  width: auto;
+}
+
+.loading-error-header {
+  font-size: 1.5rem !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  text-align: center;
+  margin-bottom: 1.75rem;
+  max-width: 20rem;
+}
+
+/*
+ * The step list. `counter-reset` stays on the <ol> (XRExtras sets it) so the
+ * numbering still comes from its own counter — only the layout changes.
+ */
+.loading-error-instructions {
+  font-family: inherit !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.5;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  max-width: 20rem;
+  text-align: left;
+}
+
+.loading-error-instructions > li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.25rem;
+  margin-bottom: 0.625rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/*
+ * Step badge. Overrides the absolute `left: -8vh` positioning so the number sits
+ * inside its own row; `flex` here needs no explicit width/height juggling.
+ */
+.loading-error-instructions > li:before {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  border-radius: 9999px !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  line-height: 1 !important;
+}
+
+/* The inline "tap this" chips — kept recognisable, toned to our palette. */
+.highlight {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+.camera-instruction-block {
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  font-size: 0.8125rem;
+  word-break: break-all;
+}
+
+/*
+ * "CLEAR & RESET" mirrors Chrome's own button, so it stays blue — recolouring it
+ * would make it harder to match against what the user actually sees in settings.
+ */
+.camera-instruction-button {
+  padding: 0.375rem 0.75rem !important;
+  border-radius: 0.5rem;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: none !important;
+}
+
+.loading-error-instructions img {
+  height: 1.125rem;
+  vertical-align: middle;
+}
+
+/* Closing line — this is the part that used to be clipped off-screen. */
+.loading-error-footer {
+  font-size: 0.9375rem !important;
+  line-height: 1.5 !important;
+  width: auto !important;
+  max-width: 20rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.loading-error-footer img {
+  display: block;
+  height: 1.5rem;
+  margin: 0 auto 0.5rem;
+  opacity: 0.7;
+}
+
+/* iOS variant: same palette, and the fixed 17vh top margin becomes flexible. */
+.permissionIconIos {
+  margin-top: 0 !important;
+  padding-top: 15vh;
+}
+
+.permissionIconIos img {
+  height: 3.5rem !important;
+}
+
+#cameraPermissionsErrorAppleMessage,
+#microphonePermissionsErrorAppleMessage {
+  font-size: 1.25rem !important;
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 20rem !important;
+  padding: 0 1.5rem;
+  margin-top: 1.5rem !important;
+}
+
+.bottom-message {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 2rem) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55) !important;
+}

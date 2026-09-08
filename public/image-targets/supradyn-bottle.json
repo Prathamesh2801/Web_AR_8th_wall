@@ -1,0 +1,31 @@
+{
+  "imagePath": "image-targets/supradyn-bottle_luminance.png",
+  "metadata": null,
+  "name": "supradyn-bottle",
+  "type": "CYLINDER",
+  "properties": {
+    "left": 0,
+    "top": 1213,
+    "width": 1229,
+    "height": 1639,
+    "isRotated": true,
+    "originalWidth": 1229,
+    "originalHeight": 4064,
+    "targetCircumferenceTop": 172,
+    "cylinderCircumferenceTop": 176,
+    "cylinderCircumferenceBottom": 176,
+    "cylinderSideLength": 52.01476377952756,
+    "arcAngle": 351.8181818181818,
+    "coniness": 0,
+    "inputMode": "ADVANCED",
+    "unit": "mm"
+  },
+  "resources": {
+    "originalImage": "supradyn-bottle_original.png",
+    "croppedImage": "supradyn-bottle_cropped.png",
+    "thumbnailImage": "supradyn-bottle_thumbnail.png",
+    "luminanceImage": "supradyn-bottle_luminance.png"
+  },
+  "created": 1788779731064,
+  "updated": 1788779731064
+}
