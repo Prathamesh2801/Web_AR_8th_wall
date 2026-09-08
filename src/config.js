@@ -78,17 +78,19 @@ export const ANIMATIONS = {
     entranceDuration: 2000, // ms for the full entrance, peak at ~60%
     energySpeed: 1.6, // ribbon revolutions per second at peak
 
-    // Aura shell radii, as multiples of the tracked bottle radius
-    innerGlowScale: 1.01,
-    middleGlowScale: 1.035,
-    outerGlowScale: 1.08,
+    // Aura shell radii, as multiples of the tracked bottle radius.
+    // Kept tight: widely spaced shells sum into a thick sheath around the bottle
+    // rather than the thin rim of light a real practical light would leave.
+    innerGlowScale: 1.005,
+    middleGlowScale: 1.018,
+    outerGlowScale: 1.04,
 
     // Embers
-    particleCount: 160,
-    particleSpread: 1.2, // outermost particle radius, in bottle radii
+    particleCount: 120,
+    particleSpread: 1.14, // outermost particle radius, in bottle radii
 
     // Resting state
-    finalAuraOpacity: 0.3, // steady rim intensity after settling
+    finalAuraOpacity: 0.22, // steady rim intensity after settling
     finalPulseSpeed: 0.55, // rad/s of the resting breath
   },
 };

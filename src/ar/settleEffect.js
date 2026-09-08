@@ -53,14 +53,14 @@ const DEFAULTS = {
   entranceDuration: 2000,      // ms; the full cinematic entrance
   energySpeed: 1.6,            // ribbon revolutions per second at peak
 
-  innerGlowScale: 1.01,
-  middleGlowScale: 1.035,
-  outerGlowScale: 1.08,
+  innerGlowScale: 1.005,
+  middleGlowScale: 1.018,
+  outerGlowScale: 1.04,
 
-  particleCount: 160,
-  particleSpread: 1.2,         // outer particle radius, in bottle radii
+  particleCount: 120,
+  particleSpread: 1.14,        // outer particle radius, in bottle radii
 
-  finalAuraOpacity: 0.3,       // steady-state rim intensity
+  finalAuraOpacity: 0.22,      // steady-state rim intensity
   finalPulseSpeed: 0.55,       // rad/s of the resting breath
 }
 
@@ -132,35 +132,34 @@ export const createSettleEffect = (config = {}) => {
      * wrap the silhouette.
      */
     /*
-     * SILHOUETTE, NOT A CYLINDER.
+     * SILHOUETTE, NOT A CYLINDER — AND DELIBERATELY NOT THE CAP.
      *
-     * A straight cylinder scaled to the bottle's full height cuts a hard flat ring
-     * across the domed cap and stops abruptly at the base — the glow ends mid-cap
-     * instead of following the product. The image target legitimately describes only
-     * the 52mm label band (that is what an image target IS), so the bottle's shoulder,
-     * neck and cap have to be modelled here.
+     * The image target describes ONLY the 52mm label band; that is what an image target
+     * IS. Everything above the label — shoulder, neck, cap width, dome — is unmeasured,
+     * so any profile up there is a guess, and a wrong guess reads as a bright band
+     * detached from the product. Two attempts at modelling the cap both missed.
+     *
+     * So the glow now stops at the shoulder and fades out there. Light rises up the
+     * sides of the body and pools at the base, and the cap is simply left alone — which
+     * is both more honest about what is tracked and closer to how a real practical light
+     * behaves around a product: it rakes the body, it does not halo the lid.
      *
      * PROFILE is the bottle's radius as a fraction of the label radius, sampled up the
-     * object: straight through the label, tucking in at the shoulder, narrow at the
-     * neck, flaring back out for the cap, then closing over the dome. `y` is a fraction
-     * of the label height, measured from the label's centre — so the whole profile
-     * still scales from the tracked geometry and nothing is expressed in millimetres.
+     * object. `y` is a fraction of the label height measured from the label's centre, so
+     * the whole profile still scales from the tracked geometry and nothing here is
+     * expressed in millimetres.
      */
     const PROFILE = [
       // y (in label heights)   radius (x label radius)   alpha (edge fade)
-      [-0.78, 0.94, 0.0],   // just under the base: fades out
-      [-0.70, 0.99, 0.7],
-      [-0.50, 1.00, 1.0],
-      [0.50, 1.00, 1.0],    // top of the label band
-      [0.66, 0.99, 1.0],    // shoulder: this bottle barely tapers
-      [0.80, 0.96, 0.95],
-      [0.90, 0.92, 0.9],    // short neck, only a slight waist
-      [0.98, 0.93, 0.9],    // cap sits down over the neck
-      [1.06, 0.95, 0.85],   // cap wall, nearly as wide as the label
-      [1.22, 0.94, 0.8],
-      [1.28, 0.86, 0.5],    // cap dome starts
-      [1.31, 0.66, 0.2],
-      [1.33, 0.40, 0.0],    // dome closes: fades out
+      [-0.80, 0.93, 0.0],   // just under the base: fades out
+      [-0.72, 0.98, 0.55],
+      [-0.58, 1.00, 0.9],
+      [-0.30, 1.00, 1.0],
+      [0.30, 1.00, 1.0],
+      [0.50, 1.00, 0.85],   // top of the label band
+      [0.62, 0.99, 0.5],    // onto the shoulder, already dimming
+      [0.72, 0.97, 0.18],
+      [0.80, 0.95, 0.0],    // gone before the neck: the cap is never lit
     ]
 
     /**
@@ -206,14 +205,15 @@ export const createSettleEffect = (config = {}) => {
     }
 
     /*
-     * Peaks are higher than the previous flat-fill values because the rim term
-     * concentrates light into the silhouette edges and discards most of the face —
-     * the same numbers would render almost invisible.
+     * Peaks are set so the three shells sum to a THIN rim rather than a thick sheath.
+     * The rim term concentrates light into the silhouette edges and discards most of the
+     * face, so these are higher than a flat-fill material would need — but well below
+     * the earlier values, which stacked additively into a heavy glowing shell.
      */
     const auraSpec = [
-      {scale: cfg.innerGlowScale, color: COLOR.highlight, opacity: 1.15},
-      {scale: cfg.middleGlowScale, color: COLOR.glow, opacity: 0.7},
-      {scale: cfg.outerGlowScale, color: COLOR.deep, opacity: 0.4},
+      {scale: cfg.innerGlowScale, color: COLOR.highlight, opacity: 0.62},
+      {scale: cfg.middleGlowScale, color: COLOR.glow, opacity: 0.34},
+      {scale: cfg.outerGlowScale, color: COLOR.deep, opacity: 0.16},
     ]
     const auraShells = auraSpec.map((spec) => {
       const material = new THREE.ShaderMaterial({
@@ -249,7 +249,9 @@ export const createSettleEffect = (config = {}) => {
              */
             vec3 viewDir = normalize(-vPosView);
             float facing = abs(dot(normalize(vNormalView), viewDir));
-            float rim = pow(1.0 - facing, 2.2);
+            // Higher exponent = a NARROWER band of light hugging the silhouette.
+            // At 2.2 the rim bled well onto the face and read as a thick sheath.
+            float rim = pow(1.0 - facing, 4.5);
             gl_FragColor = vec4(uColor, rim * vAlpha * uOpacity);
           }
         `,
@@ -336,12 +338,12 @@ export const createSettleEffect = (config = {}) => {
 
     // Particles live between just below the base and well above the cap.
     /*
-     * Expressed against the PROFILE's own extents (label heights) so the embers rise
-     * along the bottle and drift off just above the cap, rather than being sized from
-     * the straight proxy cylinder, which ended mid-cap.
+     * Bounded by the PROFILE's own extents so the sparks rise along the BODY and fade
+     * out at the shoulder. They deliberately do not clear the cap: the cap is untracked
+     * geometry, so anything drawn up there is guesswork and reads as detached.
      */
-    const yBottom = -height * 0.78
-    const ySpan = height * 2.25
+    const yBottom = -height * 0.80
+    const ySpan = height * 1.30
 
     const rnd = rand(20250908)
     for (let i = 0; i < N; i++) {
@@ -440,7 +442,7 @@ export const createSettleEffect = (config = {}) => {
           // shell ends on a hard rim, which reads as a band rather than pooled light.
           float vertical = smoothstep(1.0, 0.15, vY) * smoothstep(0.0, 0.12, vY);
           vec3 viewDir = normalize(-vPosView);
-          float rim = pow(1.0 - abs(dot(normalize(vNormalView), viewDir)), 2.0);
+          float rim = pow(1.0 - abs(dot(normalize(vNormalView), viewDir)), 3.5);
           gl_FragColor = vec4(uColor, rim * vertical * uOpacity);
         }
       `,
@@ -456,8 +458,8 @@ export const createSettleEffect = (config = {}) => {
      * edge lands on the bottle's base rather than hanging below it into the table —
      * the vertical falloff in the shader has already faded it to nothing by then.
      */
-    baseGlow.scale.set(r * 1.16, height * 1.3, r * 1.16)
-    baseGlow.position.y = -height * 0.13
+    baseGlow.scale.set(r * 1.075, height * 1.15, r * 1.075)
+    baseGlow.position.y = -height * 0.20
     root.add(baseGlow)
 
     state = {
@@ -561,9 +563,9 @@ export const createSettleEffect = (config = {}) => {
       // Rise mapped over the revolution, with a gentle wave so it is not a rigid helix.
       const climb = ((a / (Math.PI * 2)) % 1 + 1) % 1
       const wobble = Math.sin(a * 3) * 0.04
-      const rad = r * (1.045 + wobble)
+      const rad = r * (1.022 + wobble * 0.5)
       ribbonPos[i * 3] = Math.cos(a) * rad
-      ribbonPos[i * 3 + 1] = yBottom + ySpan * (0.12 + climb * 0.62) + wobble * r
+      ribbonPos[i * 3 + 1] = yBottom + ySpan * (0.10 + climb * 0.80) + wobble * r
       ribbonPos[i * 3 + 2] = Math.sin(a) * rad
       // Tail fades out; head is brightest.
       ribbonAlpha[i] = (1 - back) * (1 - back)
@@ -608,7 +610,7 @@ export const createSettleEffect = (config = {}) => {
     // -------------------------------------------------------------- base glow
     const baseIn = THREE.MathUtils.clamp((age - 0.35) / 0.8, 0, 1)
     state.baseGlow.material.uniforms.uOpacity.value =
-      0.85 * envelope * easeOut(baseIn) * breath
+      0.42 * envelope * easeOut(baseIn) * breath
 
   }
 
