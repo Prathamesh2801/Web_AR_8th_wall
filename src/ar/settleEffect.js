@@ -32,38 +32,7 @@
  */
 import * as THREE from 'three'
 
-import {HEIGHT_SCALE, Y_OFFSET_SCALE} from './occlusionProxy'
 import {RenderOrder} from './renderOrder'
-
-/** Parses "#RRGGBB" (or a number) into a THREE.Color-compatible hex. */
-const toHex = (value, fallback) => {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string' && /^#?[0-9a-f]{6}$/i.test(value)) {
-    return parseInt(value.replace('#', ''), 16)
-  }
-  return fallback
-}
-
-/** Defaults; every one can be overridden from the animation's config block. */
-const DEFAULTS = {
-  glowColor: '#FFD45A',        // primary gold
-  highlightColor: '#FFF1A8',   // bright highlight
-  deepColor: '#D99A22',        // deep warm gold
-  emberColor: '#FFF8D6',       // very soft warm white
-
-  entranceDuration: 2000,      // ms; the full cinematic entrance
-  energySpeed: 1.6,            // ribbon revolutions per second at peak
-
-  innerGlowScale: 1.005,
-  middleGlowScale: 1.018,
-  outerGlowScale: 1.04,
-
-  particleCount: 120,
-  particleSpread: 1.14,        // outer particle radius, in bottle radii
-
-  finalAuraOpacity: 0.22,      // steady-state rim intensity
-  finalPulseSpeed: 0.55,       // rad/s of the resting breath
-}
 
 /** easeOutCubic — fast start, gentle arrival. Used for anything that grows. */
 const easeOut = t => 1 - Math.pow(1 - t, 3)
@@ -80,17 +49,17 @@ const rand = (seed) => {
   }
 }
 
-export const createSettleEffect = (config = {}) => {
-  const cfg = {...DEFAULTS, ...config}
+export const createSettleEffect = (config) => {
+  // Every knob lives in src/config.js (ANIMATIONS.settle); THREE.Color takes '#RRGGBB'.
+  const cfg = config
   const COLOR = {
-    glow: toHex(cfg.glowColor, 0xffd45a),
-    highlight: toHex(cfg.highlightColor, 0xfff1a8),
-    deep: toHex(cfg.deepColor, 0xd99a22),
-    ember: toHex(cfg.emberColor, 0xfff8d6),
+    glow: cfg.glowColor,
+    highlight: cfg.highlightColor,
+    deep: cfg.deepColor,
+    ember: cfg.emberColor,
   }
 
   const root = new THREE.Group()
-  root.visible = false
 
   let built = false
   let state = null
@@ -114,15 +83,6 @@ export const createSettleEffect = (config = {}) => {
     if (!radii.length || !Number.isFinite(height) || height <= 0) return false
 
     const r = radii.reduce((a, b) => a + b, 0) / radii.length
-
-    /*
-     * The glow must cover the PHYSICAL bottle, not just the tracked label band. The
-     * occlusion proxy already models that volume, so its scale and offset are imported
-     * rather than re-derived — if the proxy's idea of the bottle changes, the glow
-     * follows it instead of drifting out of alignment.
-     */
-    const bodyHeight = height * HEIGHT_SCALE
-    const bodyY = height * Y_OFFSET_SCALE
 
     // ---------------------------------------------------------------- LAYER 1: aura
     /*
@@ -486,7 +446,7 @@ export const createSettleEffect = (config = {}) => {
     root.add(baseGlow)
 
     state = {
-      r, bodyHeight, bodyY, yBottom, ySpan,
+      r, yBottom, ySpan,
       auraShells, ribbon, ribbonMat, ribbonPos, ribbonAlpha, TRAIL,
       embers, emberMat, emberPos, emberAlpha,
       pAngle, pRadius, pRise, pSpin, pLife, pSpeed, N,
@@ -495,7 +455,6 @@ export const createSettleEffect = (config = {}) => {
     built = true
     console.log('[AR] settle effect built', {
       bottleRadius: +r.toFixed(4),
-      bodyHeight: +bodyHeight.toFixed(4),
       particles: N,
       drawCalls: 3 + 1 + 1 + 1,
     })
@@ -637,12 +596,6 @@ export const createSettleEffect = (config = {}) => {
 
   }
 
-  const setVisible = (v) => {
-    root.visible = v
-  }
-
-  const isBuilt = () => built
-
   const getDebugInfo = () => (state
     ? {
       settlePhase: phaseName,
@@ -653,7 +606,7 @@ export const createSettleEffect = (config = {}) => {
     : null)
 
   return {
-    root, build, update, setVisible, isBuilt,
+    root, build, update,
     restartEntrance, setUserSpeed, getDebugInfo,
   }
 }

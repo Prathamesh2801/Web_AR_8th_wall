@@ -1,55 +1,51 @@
 /**
- * Information card for a tapped nutrient node.
+ * Bottom sheet for a tapped nutrient. Occupies the AR screen's bottom zone in place
+ * of the status bar, so the two never overlap.
  *
- * All values come from nutrientData.js, extracted from the production artwork.
- * The copy states presence and amount only — no health claims beyond the packaging.
- *
- * Styled to read as part of the AR scene rather than a generic web modal.
+ * All values come from nutrientData.js, extracted from the production artwork. The
+ * copy states presence and amount only — no health claims beyond the packaging.
  */
 export const NutrientCard = ({nutrient, onClose}) => {
   if (!nutrient) return null
-
   const {full, amount, rda, group} = nutrient
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 z-40 flex justify-center px-4"
-      style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 5.5rem)'}}
+      className="absolute inset-x-0 z-40 flex justify-center px-4"
+      style={{bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.25rem)'}}
     >
-      <div className="pointer-events-auto w-full max-w-[17rem] animate-[fadeUp_180ms_ease-out] rounded-2xl border border-white/15 bg-neutral-950/80 p-4 text-center shadow-2xl backdrop-blur-xl">
-        <p className="text-[9px] font-medium tracking-[0.22em] text-white/40">
-          {group.toUpperCase()}
-        </p>
-
-        <h2 className="mt-1 text-lg font-semibold tracking-wide text-white">{full}</h2>
-
-        <div className="mt-3 flex items-center justify-center gap-4 text-sm">
-          <div>
-            <div className="font-mono text-cyan-200">{amount}</div>
-            <div className="text-[9px] tracking-wider text-white/35">PER TABLET</div>
+      <section
+        aria-label={full}
+        className="glass pointer-events-auto w-full max-w-sm animate-[fadeUp_180ms_ease-out] rounded-3xl p-5 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium tracking-[0.2em] text-gold/80">{group.toUpperCase()}</p>
+            <h2 className="mt-1 text-xl font-semibold text-white">{full}</h2>
           </div>
-          {rda && (
-            <div className="border-l border-white/10 pl-4">
-              <div className="font-mono text-cyan-200">{rda}%</div>
-              <div className="text-[9px] tracking-wider text-white/35">RDA (MEN)</div>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white/80 transition active:scale-95"
+          >
+            ×
+          </button>
         </div>
 
-        <p className="mt-3 text-[11px] leading-relaxed text-white/50">
-          {rda
-            ? 'Present in this product.'
-            : 'Present in this product. %RDA not established.'}
-        </p>
+        <dl className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-white/5 p-3">
+            <dt className="text-xs text-white/50">Per tablet</dt>
+            <dd className="mt-0.5 tabular-nums text-lg text-white">{amount}</dd>
+          </div>
+          <div className="rounded-2xl bg-white/5 p-3">
+            <dt className="text-xs text-white/50">RDA (men)</dt>
+            <dd className="mt-0.5 tabular-nums text-lg text-white">{rda ? `${rda}%` : '—'}</dd>
+          </div>
+        </dl>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-3.5 w-full rounded-xl border border-white/20 bg-white/10 py-2.5 text-[11px] font-semibold tracking-[0.18em] text-white transition active:scale-[0.98] active:bg-white/20"
-        >
-          CLOSE
-        </button>
-      </div>
+        {!rda && <p className="mt-3 text-xs text-white/50">%RDA not established.</p>}
+      </section>
     </div>
   )
 }

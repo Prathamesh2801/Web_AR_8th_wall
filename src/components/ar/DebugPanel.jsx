@@ -5,12 +5,6 @@ import {TrackingState, trackingStore} from '../../ar/trackingStore'
 const f = (n, digits = 3) => (typeof n === 'number' ? n.toFixed(digits) : '—')
 
 /*
- * `min-w-0` on the flex children is what prevents horizontal overflow: without it a
- * flex item's automatic minimum size is its CONTENT width, so a long value (a target
- * name, a nutrient's full name) forces the row — and the whole panel — wider than its
- * container instead of wrapping. `break-words` then lets long values wrap.
- */
-/*
  * `min-w-0` on the flex children is what prevents horizontal overflow: a flex item's
  * automatic minimum size is its CONTENT width, so a long value (a nutrient's full name,
  * a ring's rotation triple) would otherwise force the row — and the panel — wider than
@@ -20,17 +14,23 @@ const f = (n, digits = 3) => (typeof n === 'number' ? n.toFixed(digits) : '—')
 const Row = ({label, value, accent}) => (
   <div className="flex items-baseline justify-between gap-2 leading-tight">
     <span className="min-w-0 wrap-break-word text-white/45">{label}</span>
-    <span className={`min-w-0 wrap-break-word text-right font-mono ${accent ?? 'text-white/90'}`}>
+    <span className={`min-w-0 wrap-break-word text-right tabular-nums ${accent ?? 'text-white/90'}`}>
       {value}
     </span>
   </div>
 )
 
+const SPEED_STEPS = [0, 0.5, 1, 2, 3]
+
+/** Toggle-button styling shared by the controls. */
+const pill = on => `rounded-md border px-2 py-1.5 tabular-nums transition-colors ${
+  on ? 'border-gold/50 bg-gold/15 text-white' : 'border-white/15 bg-white/5 text-white/55'
+}`
+
 const stateColor = {
   [TrackingState.BOOTING]: 'text-white/60',
   [TrackingState.LOADING]: 'text-amber-300',
   [TrackingState.SEARCHING]: 'text-amber-300',
-  [TrackingState.FOUND]: 'text-emerald-300',
   [TrackingState.TRACKING]: 'text-emerald-300',
   [TrackingState.LOST]: 'text-rose-300',
   [TrackingState.ERROR]: 'text-rose-400',
@@ -45,7 +45,7 @@ const stateColor = {
  * Pose fields intentionally read "—" when not tracking, so stale values can never be
  * mistaken for live ones. Tracking failures are shown, never hidden.
  */
-export const DebugPanel = ({tracking}) => {
+export const DebugPanel = ({tracking, speed, onSpeedChange}) => {
   const {state, targetName, targetType, position, rotation, scale, geometry, fps,
     detectionCount, selectedNutrient} = tracking
 
@@ -65,7 +65,7 @@ export const DebugPanel = ({tracking}) => {
     return () => clearInterval(id)
   }, [])
 
-  const orbital = trackingStore.getDebugInfo()
+  const orbital = trackingStore.getScene()?.getDebugInfo() ?? null
 
   return (
     <div
@@ -83,25 +83,34 @@ export const DebugPanel = ({tracking}) => {
        * scrolling. `overflow-x-hidden` is the backstop, so only vertical scrolling
        * remains possible.
        */
-      className="pointer-events-auto absolute left-3 z-40 max-h-[58vh] w-68 max-w-[calc(100vw-1.5rem)] touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl border border-white/10 bg-black/80 p-3 text-[11px] text-white shadow-xl backdrop-blur-md"
-      // max-h caps at 58vh so the panel cannot run underneath the DebugControls panel
-      // pinned to the bottom of the screen.
+      className="pointer-events-auto absolute left-3 z-40 max-h-[50vh] w-68 max-w-[calc(100vw-1.5rem)] touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain rounded-xl glass p-3 text-[11px] text-white shadow-xl"
+      // max-h keeps the bottom bar (status + chips) visible underneath.
       style={{top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)'}}
     >
       <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-1.5">
         <span className="font-semibold tracking-wide text-white/70">AR DEBUG</span>
-        <span className="font-mono text-white/40">{fps} fps</span>
+        <span className="tabular-nums text-white/40">{fps} fps</span>
       </div>
 
       <div className="space-y-1">
         <Row label="Status" value={state} accent={stateColor[state]} />
-        <Row label="Target" value={targetName ?? '—'} />
+        <Row label="Lead target" value={targetName ?? '—'} />
         <Row label="Type" value={targetType ?? '—'} />
         <Row label="Detections" value={detectionCount} />
         <Row label="Selected" value={selectedNutrient?.full ?? '—'} />
       </div>
 
-      {/* Controls live in DebugControls; this panel stays read-only. */}
+      {/* Controls drive three.js via store commands; they never re-render the AR view. */}
+      <div className="mt-2 space-y-1.5 border-t border-white/10 pt-2">
+        <div className="grid grid-cols-5 gap-1">
+          {SPEED_STEPS.map(v => (
+            <button key={v} type="button" onClick={() => onSpeedChange(v)}
+              aria-pressed={speed === v} className={pill(speed === v)}>
+              {v === 0 ? '||' : `${v}x`}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {orbital && (
         <div className="mt-2 space-y-1 border-t border-white/10 pt-2">
@@ -128,7 +137,7 @@ export const DebugPanel = ({tracking}) => {
               <Row label="Connections" value={orbital.connectionCount} />
               <Row label="Rings" value={orbital.ringCount} />
               {/* speedScale is the automatic selection slow-down; userSpeed is the
-                  multiplier set in DebugControls. They multiply together. */}
+                  speed buttons above. They multiply together. */}
               <Row label="Speed (auto)" value={`${orbital.speedScale}x`} />
               <Row label="Speed (user)" value={`${orbital.userSpeed ?? 1}x`} />
             </>

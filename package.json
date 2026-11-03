@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "generate-target": "npx @8thwall/image-target-cli@latest"
+    "generate-targets": "node scripts/generate-targets.mjs",
+    "test": "node --test"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -16,6 +17,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@8thwall/image-target-cli": "1.0.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

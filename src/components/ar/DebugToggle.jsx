@@ -1,21 +1,15 @@
 /**
- * Small, deliberately secondary developer control.
- *
- * Toggling only flips UI visibility — it never touches the AR pipeline, so tracking
- * is unaffected.
+ * Developer-only switch for the debug panel. Rendered only when the URL has `?debug`
+ * (see App.jsx), so normal users never see it. Never touches the AR pipeline.
  */
 export const DebugToggle = ({on, onToggle}) => (
   <button
     type="button"
     onClick={onToggle}
     aria-pressed={on}
-    className={`pointer-events-auto fixed right-3 z-50 rounded-md border px-2.5 py-1.5 text-[10px] font-medium tracking-widest backdrop-blur-md transition-colors ${
-      on
-        ? 'border-cyan-300/40 bg-cyan-400/20 text-cyan-100'
-        : 'border-white/15 bg-black/40 text-white/50 hover:text-white/80'
+    className={`pointer-events-auto min-h-8 rounded-full border px-3 text-[11px] font-medium tracking-widest backdrop-blur-md transition-colors ${
+      on ? 'border-gold/50 bg-gold/20 text-white' : 'border-white/15 bg-black/40 text-white/60'
     }`}
-    // Sits below the browser chrome and respects the notch / safe area.
-    style={{top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)'}}
   >
     DEBUG
   </button>

@@ -1,13 +1,11 @@
 /**
  * bottleScene.js
  *
- * Owns the three.js content attached to the tracked cylindrical target, and the
- * tap-picking that turns a screen touch into a selected item.
+ * Owns the three.js content attached to the tracked bottle: the anchor, the shared
+ * occlusion proxy, the enabled animations, pose smoothing and tap picking.
  *
- * This file knows nothing about any SPECIFIC animation. It builds whichever animations
- * are switched on in src/config.js, drives them through the shared module contract
- * documented there, and forwards optional calls only to the modules that implement
- * them. Adding an animation therefore does not require editing this file.
+ * Knows nothing about any SPECIFIC animation: it drives them through the module
+ * contract documented in src/config.js, so adding one never touches this file.
  *
  * No React. The only outward crossing is `onSelect`, invoked on a successful tap.
  */
@@ -15,26 +13,22 @@ import * as THREE from 'three'
 
 import {ANIMATION_FACTORIES} from './animations'
 import {createOcclusionProxy} from './occlusionProxy'
-import {NUTRIENTS} from './nutrientData'
-import {OCCLUSION, enabledAnimationIds, animationConfig} from '../config'
-
-const NUTRIENT_BY_ID = new Map(NUTRIENTS.map(n => [n.id, n]))
+import {ANIMATIONS, OCCLUSION, TRACKING, enabledAnimationIds, animationConfig} from '../config'
 
 export const createBottleScene = ({onSelect} = {}) => {
-  // Driven directly by the tracker. Hidden until the target is found.
+  // Driven by the tracker. Hidden until the bottle is found.
   const anchor = new THREE.Group()
   anchor.visible = false
 
   // Depth-only stand-in for the physical bottle. Added FIRST so its depth is written
-  // before the animated content, letting back-side objects fail the depth test naturally.
+  // before the animated content, letting back-side objects fail the depth test.
   const occluder = createOcclusionProxy()
   if (OCCLUSION.enabled) anchor.add(occluder.group)
 
   /**
-   * The enabled animations, instantiated once at construction.
-   *
-   * An id with no registered factory is reported and skipped rather than throwing: a
-   * typo in config should not take down the whole AR experience.
+   * Every enabled animation, instantiated once. `active` ones are visible and updated;
+   * inactive ones stay built but cost nothing per frame. An id with no factory is
+   * reported and skipped: a config typo should not take down the experience.
    */
   const animations = enabledAnimationIds().flatMap((id) => {
     const factory = ANIMATION_FACTORIES[id]
@@ -43,175 +37,138 @@ export const createBottleScene = ({onSelect} = {}) => {
       return []
     }
     const instance = factory(animationConfig(id))
+    instance.root.visible = Boolean(ANIMATIONS[id].active)
     anchor.add(instance.root)
     return [{id, instance}]
   })
+  const active = () => animations.filter(a => a.instance.root.visible)
 
   console.log('[AR] animations enabled:', animations.map(a => a.id))
 
   let camera = null
   let canvas = null
-  // Set once by fitToGeometry; see the comment there for why this must not be derived
-  // from the animations' own built state.
-  let hasFitted = false
+  let geometry = null   // from the engine; build() is retried until every module accepts it
+  const pending = new Set(animations)
+
+  // --- Pose smoothing --------------------------------------------------------------
+  // The engine pose is written to `target`; the anchor eases toward it each frame.
+  const target = {position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: 1}
+  let snapNext = true   // first pose after (re)acquisition is applied raw
+  let lostAt = null
+  let lastFrameMs = null
+
   const raycaster = new THREE.Raycaster()
   const pointer = new THREE.Vector2()
 
-  /** Calls `method` on every animation that implements it. */
-  const forEachAnimation = (method, ...args) => {
-    for (const {instance} of animations) instance[method]?.(...args)
+  /** Calls `method` on every ACTIVE animation that implements it. */
+  const forEachActive = (method, ...args) => {
+    for (const {instance} of active()) instance[method]?.(...args)
   }
 
-  /**
-   * Converts a pointer event to normalised device coordinates and picks an object.
-   *
-   * Uses the canvas bounding rect rather than window size, so it stays correct
-   * regardless of canvas placement or device pixel ratio.
-   */
+  /** Screen tap -> the `userData.pick` of the nearest pickable mesh, if any. */
   const handleTap = (clientX, clientY) => {
     if (!camera || !canvas || !anchor.visible) return
+    const pickables = active().flatMap(({instance}) => instance.getPickables?.() ?? [])
+    if (!pickables.length) return
+
     const rect = canvas.getBoundingClientRect()
     pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
-
-    // Pickables from every animation that offers any, so more than one can be tappable.
-    const pickables = animations.flatMap(({instance}) => instance.getPickables?.() ?? [])
-    if (!pickables.length) return
-
     raycaster.setFromCamera(pointer, camera)
-    const hits = raycaster.intersectObjects(pickables, false)
-    if (!hits.length) return
-
-    const id = hits[0].object.userData.nutrientId
-    if (!id) return
-
-    // Only notify outward. The three.js side is updated by `setSelected` below, which
-    // the store drives — see the comment there for why this must not be set directly.
-    onSelect?.(NUTRIENT_BY_ID.get(id) ?? null)
+    const pick = raycaster.intersectObjects(pickables, false)[0]?.object.userData.pick
+    // Only notify outward; the store drives setSelected back in, so every path that
+    // changes the selection goes through one place.
+    if (pick) onSelect?.(pick)
   }
 
-  /**
-   * Applies the selection to the 3D scene. Driven by the tracking store, which is the
-   * single source of truth for what is selected.
-   *
-   * This exists because the selection can be cleared from THREE places: tapping another
-   * node, closing the card in React, and losing the target. Previously only the tap path
-   * called into three.js, so closing the card updated React but left the 3D system still
-   * believing a node was selected — its orbit stayed at the 0.25x "reading" speed
-   * permanently, and the debug speed multiplier then scaled that reduced value (3x
-   * reached only 0.70x of normal). Routing every path through the store prevents the two
-   * from drifting apart.
-   */
-  const setSelected = (nutrientId) => {
-    forEachAnimation('setSelected', nutrientId)
-  }
-
-  /** Adds lights + the anchor to the XR scene, and wires tap picking. */
   const addToScene = (scene, xrCamera, xrCanvas) => {
     camera = xrCamera
     canvas = xrCanvas
-
     // Materials are unlit; ambient is a gentle fill in case lit materials are added.
     scene.add(new THREE.AmbientLight(0xffffff, 1.0))
     scene.add(anchor)
-
-    // pointerup (not pointerdown) so a drag/scroll gesture does not select.
-    canvas.addEventListener('pointerup', (e) => {
-      handleTap(e.clientX, e.clientY)
-    })
+    // pointerup (not pointerdown) so a drag gesture does not select.
+    canvas.addEventListener('pointerup', e => handleTap(e.clientX, e.clientY))
   }
 
   /**
-   * Builds the occluder and every enabled animation from the engine's reported cylinder
-   * geometry. Runs once; all are sized from the same real measurements.
+   * Sizes the occluder and animations from the engine's cylinder geometry. Runs on
+   * every tracked frame, so it must be cheap once everything is built.
    */
-  const fitToGeometry = (geometry) => {
-    /*
-     * `reality.imageupdated` fires every tracked frame, so this runs continuously —
-     * it must be idempotent. The guard is a plain "have we already fitted?" flag rather
-     * than a check over the animations: when no animation is enabled the old
-     * `animations.length && ...` condition was falsy, so the body re-ran every frame and
-     * `setOutlineVisible(OCCLUSION.showOutline)` kept resetting the user's toggle back
-     * to its config default ~30 times a second. The outline switched on and was wiped
-     * before the next frame drew.
-     */
-    if (hasFitted) return
-    hasFitted = true
-
-    if (OCCLUSION.enabled) {
-      occluder.build(geometry)
-      // Applied ONCE, here, so this is a starting value and not a per-frame override.
-      occluder.setOutlineVisible(OCCLUSION.showOutline)
+  const fitToGeometry = (g) => {
+    if (!geometry) {
+      geometry = g
+      if (OCCLUSION.enabled) occluder.build(g)
     }
-
-    for (const {instance} of animations) {
-      if (instance.isBuilt?.()) continue
-      if (instance.build(geometry)) instance.setVisible?.(true)
-    }
+    for (const a of pending) if (a.instance.build(geometry)) pending.delete(a)
   }
 
   /**
-   * Welds the content to the tracked cylinder.
-   *
-   * For CYLINDRICAL/CONICAL targets the engine's reported position/rotation are used
-   * DIRECTLY (the planar re-centering correction applies only to FLAT targets). Because
-   * the animations are CHILDREN of this anchor, they inherit the bottle's pose
-   * automatically — no transform is duplicated onto individual objects.
+   * New engine pose for the lead target. For CYLINDRICAL targets the engine pose is
+   * used directly (its planar re-centering applies only to FLAT targets). Animations
+   * are children of the anchor, so they inherit it.
    */
   const applyPose = ({position, rotation, scale}) => {
-    anchor.position.set(position.x, position.y, position.z)
-    anchor.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
-    anchor.scale.setScalar(scale)
-    anchor.visible = true
+    target.position.set(position.x, position.y, position.z)
+    target.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
+    target.scale = scale
+
+    if (!anchor.visible) {
+      // Re-acquired. A long absence replays the entrance; a dropout does not.
+      if (lostAt !== null && performance.now() - lostAt > TRACKING.replayAfterMs) {
+        forEachActive('restartEntrance')
+      }
+      lostAt = null
+      snapNext = true
+      anchor.visible = true
+    }
   }
 
   const hide = () => {
     anchor.visible = false
-    // Replay the staged entrance next time the bottle is reacquired.
-    forEachAnimation('restartEntrance')
-    forEachAnimation('setSelected', null)
+    lostAt = performance.now()
   }
 
-  /** Per-frame animation, driven by the AR loop. */
+  /** Per frame, from the AR loop. Allocates nothing. */
   const update = (timeMs) => {
-    for (const {instance} of animations) instance.update(timeMs, camera)
+    const dt = lastFrameMs === null ? 0 : Math.min(timeMs - lastFrameMs, 100)
+    lastFrameMs = timeMs
+
+    // Nothing on screen: skip the work. Animations clamp their own dt, so a short
+    // dropout resumes in place.
+    if (!anchor.visible) return
+
+    // Frame-rate independent exponential smoothing; 0ms = raw pose.
+    const k = snapNext || TRACKING.smoothingMs <= 0
+      ? 1
+      : 1 - Math.exp(-dt / TRACKING.smoothingMs)
+    snapNext = false
+    anchor.position.lerp(target.position, k)
+    anchor.quaternion.slerp(target.quaternion, k)
+    anchor.scale.setScalar(anchor.scale.x + (target.scale - anchor.scale.x) * k)
+
+    for (const {instance} of active()) instance.update(timeMs, camera)
   }
 
-  /**
-   * Debug info from every animation, merged with the occluder's own status.
-   *
-   * Deliberately NOT null when no animation is enabled. Occlusion is independent of the
-   * animations, so its status must still be reported with them all switched off —
-   * otherwise the panel's whole debug section disappears and the outline looks broken
-   * even though it is working.
-   */
+  /** Switches animations on/off at runtime. Newly shown ones replay their entrance. */
+  const setActiveAnimations = (ids) => {
+    for (const {id, instance} of animations) {
+      const on = ids.includes(id)
+      if (on && !instance.root.visible) instance.restartEntrance?.()
+      if (!on) instance.setSelected?.(null)
+      instance.root.visible = on
+    }
+  }
+
   const getDebugInfo = () => ({
-    ...animations.reduce(
-      (acc, {instance}) => ({...acc, ...(instance.getDebugInfo?.() ?? {})}),
-      {}
-    ),
-    animations: animations.map(a => a.id).join(', ') || 'none',
-    occlusionEnabled: OCCLUSION.enabled && occluder.isEnabled(),
+    ...active().reduce((acc, {instance}) => ({...acc, ...(instance.getDebugInfo?.() ?? {})}), {}),
+    animations: active().map(a => a.id).join(', ') || 'none',
+    occlusionEnabled: OCCLUSION.enabled && occluder.isBuilt(),
   })
 
-  /**
-   * Reveals the wireframe of the invisible occlusion cylinder.
-   *
-   * This is the surface that actually does the hiding, so showing it makes the motion
-   * verifiable by eye: objects should pass cleanly outside the wireframe on the near
-   * side and disappear behind it on the far side, never crossing through it.
-   */
-  const setOutlineVisible = (v) => {
-    occluder.setOutlineVisible(v)
-  }
-
-  /** Scales animation speed from the debug controls. 0 freezes motion. */
-  const setOrbitSpeed = (v) => {
-    forEachAnimation('setUserSpeed', v)
-  }
-
   return {
-    anchor, addToScene, applyPose, fitToGeometry, hide, update, getDebugInfo,
-    setOutlineVisible, setOrbitSpeed, setSelected,
+    addToScene, applyPose, fitToGeometry, hide, update, getDebugInfo, setActiveAnimations,
+    setSelected: id => forEachActive('setSelected', id),
+    setSpeed: v => animations.forEach(({instance}) => instance.setUserSpeed?.(v)),
   }
 }

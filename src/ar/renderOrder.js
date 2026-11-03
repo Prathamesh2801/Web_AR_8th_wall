@@ -30,6 +30,9 @@ export const RenderOrder = {
   SETTLE_BASE_GLOW: 10,
   SETTLE_AURA: 11,
 
+  /** Product silhouette outline (depthTest off; drawn over the glow, under nodes). */
+  PRODUCT_OUTLINE: 15,
+
   /** Orbit paths — the thin rings the nodes travel along. */
   ORBIT_PATH: 20,
   /** Tethers connecting nodes to the bottle. */

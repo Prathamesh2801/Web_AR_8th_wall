@@ -1,22 +1,17 @@
 /**
- * nutrientSystem.js
+ * nutrientSystem.js — animation: every nutrient on the label orbits the bottle on one
+ * of three tilted rings. Tap a node to open its card.
  *
- * ONE tilted 3D elliptical orbit carrying every nutrient around the tracked bottle.
- *
- * Structure (all under the target anchor, so the whole system inherits its pose):
  *   root
- *     orbitGroup            <- tilted on X and Z: the orbital PLANE
- *       pathLine            <- thin elliptical guide
- *       travellingHighlight <- small dot showing direction of travel
- *       nodeGroup * N       <- one per nutrient (sphere + glow + label)
- *     connectionLines       <- a few sparse links
- *     coreGlow              <- emergence glow at the bottle's centre
+ *     ring group * 3     <- each tilted into its own plane
+ *       pathLine         <- faint elliptical guide
+ *       node * N         <- sphere + halo + invisible hit sphere + label sprite
+ *       tether * N       <- node -> bottle axis
+ *     connection * M     <- sparse links within a label group
+ *     coreGlow           <- emergence glow at the bottle's centre
  *
- * DEPTH IS REAL. Every material here keeps `depthTest: true`, so the depth-only
- * occlusion proxy (occlusionProxy.js) genuinely hides nodes travelling behind the
- * bottle. Nothing is faded by orbit angle to fake it.
- *
- * All sizes derive from the runtime cylinder geometry. No React; no per-frame allocation.
+ * Depth is real: every material keeps `depthTest: true`, so the occlusion proxy hides
+ * nodes behind the bottle. All sizes derive from the runtime cylinder geometry.
  */
 import * as THREE from 'three'
 
@@ -26,63 +21,20 @@ import {NUTRIENTS, CONNECTIONS, GROUP_COLOR} from './nutrientData'
 
 /*
  * --- Orbital rings ----------------------------------------------------------------
- *
- * THREE rings on distinctly different planes rather than one. Nineteen nodes on a
- * single ellipse sat too close together to read; spreading them over three planes cuts
- * the per-ring count to 6-7 and lets the nodes be scaled UP without colliding.
- *
- * Radii are multiples of the real bottle radius, so the system rescales with the target.
- *
- * These tilts are NOT hand-picked. They were solved against hard constraints, verified
- * over 720 samples per ring using the bottle's REAL proportions (height/radius = 1.86,
- * from the 176mm circumference and 52mm label height in the target JSON):
- *
- * BANDED LAYOUT. Three rings of increasing size, tilted about DIFFERENT axes, all
- * confined to the height of the label band.
- *
- * The vertical confinement is a PHYSICAL constraint, not a stylistic one. The product
- * sits on a table (or is wall-mounted), so a ring that passes over the cap and under the
- * base sends nodes through the supporting surface — an earlier gimbal layout had rings
- * spending 22-26% of every lap BELOW the table, which destroys the illusion far more
- * than any amount of visual symmetry buys back. Every ring here stays within +/-0.82
- * bottle-radii of the label centre, so nodes always orbit BESIDE the product, in the
- * region that is unobstructed however the bottle is supported.
- *
- * Rings are separated by tilting about different axis COMBINATIONS rather than by
- * standing them upright. That yields ~38-40 deg of plane separation — visibly three
- * orbits rather than stacked plates, while remaining physically plausible.
- *
- * Verified against the real bottle proportions (H/R = 1.86, from the 176mm
- * circumference and 52mm label height in the target JSON):
- *
- *   1. VERTICAL CONFINEMENT: max |y| of 0.77 / 0.37 / 0.82, with ZERO samples below the
- *      table or above the cap — no node ever leaves the region beside the product.
- *   2. CLEARANCE: 0.19-0.59 bottle-radii of air between each node's GLOW SPHERE and the
- *      cylinder WALL, measured only where the node overlaps the bottle vertically.
- *      Both refinements matter. Measuring the core alone once left cores 0.006 INSIDE
- *      the surface; and measuring distance to the cylinder as a whole (including its
- *      flat top) reported a comfortable 0.177 for ring 0 while its actual wall
- *      clearance at the top of its arc was 0.035 — visibly grazing the bottle.
- *   3. OCCLUSION: 30-48% of each lap is genuinely hidden by the bottle (39.6% average),
- *      recovered from the ~30% the polar layout managed.
- *   4. PATH SEPARATION: 0.324 / 0.486 / 0.379 between ring paths, all above the 0.285
- *      glow diameter. This has to be solved geometrically, not by timing: an earlier
- *      version had rings 1 and 2 running within 0.110 of each other along 5.9% of their
- *      length, and searching speeds and phase offsets moved the worst-case node
- *      separation only from 0.110 to 0.111. Nodes then measure 0.324 apart over 4
- *      simulated minutes, clear of the 0.150 core diameter.
- *
- * `dir` alternates so adjacent rings counter-rotate. Changing any value in isolation
- * will break one of the checks above; they were searched jointly.
- *
- * `dir` alternates so adjacent rings counter-rotate, which reads as a system rather
- * than a single spinning mass. Changing any radius/tilt below invalidates the solved
- * guarantees above; re-run the constraint check if you do.
+ * Radii are multiples of the real bottle radius. The tilts were solved jointly against
+ * the bottle's real proportions (H/R = 1.86) for four constraints:
+ *   1. every node stays within the label band's height (never under the table / over
+ *      the cap), max |y| 0.77 / 0.37 / 0.82 bottle radii;
+ *   2. 0.19-0.59 radii of air between each node's halo and the bottle wall;
+ *   3. 30-48% of each lap genuinely hidden behind the bottle;
+ *   4. ring paths >= 0.324 apart, so nodes on different rings never collide.
+ * `dir` alternates so adjacent rings counter-rotate. Changing one value in isolation
+ * breaks one of the above; re-run the constraint check if you do.
  */
 const RINGS = [
-  {rx: 1.54, rz: 1.32, rotX: 0.00, rotY: 0.60, rotZ: -0.55, y: 0, dir: 1, speed: 0.95},
-  {rx: 1.80, rz: 1.55, rotX: -0.55, rotY: 1.10, rotZ: 0.47, y: 0, dir: -1, speed: 0.67},
-  {rx: 2.20, rz: 1.89, rotX: 0.50, rotY: 0.48, rotZ: -0.34, y: 0, dir: 1, speed: 0.47},
+  {rx: 1.54, rz: 1.32, rotX: 0.00, rotY: 0.60, rotZ: -0.55, dir: 1, speed: 0.95},
+  {rx: 1.80, rz: 1.55, rotX: -0.55, rotY: 1.10, rotZ: 0.47, dir: -1, speed: 0.67},
+  {rx: 2.20, rz: 1.89, rotX: 0.50, rotY: 0.48, rotZ: -0.34, dir: 1, speed: 0.47},
 ]
 
 // --- Entrance timing (seconds) ----------------------------------------------------
@@ -130,7 +82,6 @@ const makeLabel = (text, worldWidth, color) => {
 
 export const createNutrientSystem = () => {
   const root = new THREE.Group()
-  root.visible = false
 
   let built = false
   let state = null
@@ -192,8 +143,6 @@ export const createNutrientSystem = () => {
       const group = new THREE.Group()
       // Full XYZ orientation: a vertical plane is unreachable with X and Z alone.
       group.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ)
-      // Polar rings are centred on the bottle, not on the label band they orbit.
-      group.position.y = (cfg.y ?? 0) * height
       root.add(group)
 
       const rx = bottleRadius * cfg.rx
@@ -216,10 +165,9 @@ export const createNutrientSystem = () => {
       return {cfg, group, pathLine, rx, rz}
     })
 
-    // Kept for the travelling highlight and debug reporting.
+    // The travelling highlight rides the innermost ring.
     const orbitGroup = rings[0].group
     const {rx, rz} = rings[0]
-    const hy = 0
 
     // --- Travelling highlight: communicates direction of motion ---
     const highlight = new THREE.Mesh(
@@ -280,7 +228,7 @@ export const createNutrientSystem = () => {
         })
       )
       sphere.scale.setScalar(n.size)
-      sphere.userData.nutrientId = n.id
+      sphere.userData.pick = n
       sphere.renderOrder = RenderOrder.NODE_CORE
       group.add(sphere)
 
@@ -304,7 +252,7 @@ export const createNutrientSystem = () => {
         new THREE.SphereGeometry(nodeRadius * 3.0, 8, 8),
         new THREE.MeshBasicMaterial({visible: false})
       )
-      hit.userData.nutrientId = n.id
+      hit.userData.pick = n
       group.add(hit)
 
       const label = makeLabel(n.label, labelWidth, palette.core)
@@ -317,15 +265,7 @@ export const createNutrientSystem = () => {
       nodes.push({cfg: n, ring, group, sphere, glow, label, hit, baseScale: n.size})
     })
 
-    /*
-     * Re-space phases EVENLY WITHIN each ring.
-     *
-     * The `phase` values in nutrientData spread nodes over a single orbit. Now that the
-     * nutrients are split three ways, those values would leave each ring's members
-     * bunched into an arc instead of spread around it — so each ring's phases are
-     * recomputed from its own membership count. This overrides `cfg.phase` at runtime
-     * and leaves the data file untouched.
-     */
+    // Space each ring's members evenly around it.
     for (const ring of rings) {
       const members = nodes.filter(n => n.ring === ring)
       members.forEach((n, i) => {
@@ -393,12 +333,7 @@ export const createNutrientSystem = () => {
     coreGlow.renderOrder = RenderOrder.SETTLE_BASE_GLOW
     root.add(coreGlow)
 
-    // NOTE: there is no single `pathLine` any more — each ring owns its own guide
-    // path (`ring.pathLine`), so the update loop iterates `rings` instead.
-    state = {
-      orbitGroup, highlight, nodes, connections, tethers, coreGlow,
-      rings, rx, rz, hy, bottleRadius, height, nodeRadius,
-    }
+    state = {highlight, nodes, connections, tethers, coreGlow, rings, rx, rz}
     built = true
     console.log('[AR] multi-ring orbit built', {
       bottleRadius: +bottleRadius.toFixed(4),
@@ -425,8 +360,6 @@ export const createNutrientSystem = () => {
   const setUserSpeed = (v) => {
     userSpeed = THREE.MathUtils.clamp(v, 0, 3)
   }
-
-  const getUserSpeed = () => userSpeed
 
   /**
    * Per-frame update. Called from the AR loop; allocates nothing.
@@ -558,12 +491,6 @@ export const createNutrientSystem = () => {
     speedTarget = id ? 0.25 : 1
   }
 
-  const setVisible = (v) => {
-    root.visible = v
-  }
-
-  const isBuilt = () => built
-
   const getDebugInfo = () => (state
     ? {
       nutrientCount: state.nodes.length,
@@ -586,8 +513,8 @@ export const createNutrientSystem = () => {
     : null)
 
   return {
-    root, build, update, setVisible, isBuilt,
+    root, build, update,
     getPickables, setSelected, restartEntrance, getDebugInfo,
-    setUserSpeed, getUserSpeed,
+    setUserSpeed,
   }
 }

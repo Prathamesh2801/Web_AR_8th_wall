@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. One accent (the product's gold) plus the label's teal; everything
+ * else is white at varying opacity on dark glass. Use as `text-gold`, `bg-teal/15`...
+ */
+@theme {
+  --color-gold: #ffd45a;
+  --color-teal: #2bb3a8;
+}
+
+/* Glass surface shared by every floating panel, so they read as one system. */
+@utility glass {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background-color: rgb(10 10 10 / 0.72);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* Scan line sweeping the reticle while searching. */
+@keyframes scan {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50% { transform: translateY(15rem); opacity: 0.9; }
+}
+
+/*
+ * XRExtras injects an UNLAYERED `* { font-family: inherit; box-sizing: inherit }`.
+ * Unlayered CSS beats Tailwind's @layer base, so without this every element fell
+ * back to content-box (padding pushed `w-full` buttons off-screen on phones) and to
+ * the browser's serif font. Setting both on <html> — also unlayered, and more
+ * specific than `*` — lets that rule inherit the right values instead.
+ * The same rule also beats `font-*` utilities, so use weights/`tabular-nums`, not
+ * `font-mono`.
+ */
+html {
+  box-sizing: border-box;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
 html,
 body {
   margin: 0;
@@ -16,20 +55,13 @@ body {
 }
 
 /*
- * Text selection is disabled only over the AR view, where a long-press would
- * otherwise pop a selection bubble mid-interaction. UI overlays keep normal
- * selection so users can copy error messages.
+ * The 8th Wall camera feed. XRExtras.FullWindowCanvas sizes it; these rules keep it
+ * full-screen behind the React UI. No text selection, so a long-press on the AR view
+ * never pops a selection bubble.
  */
 #camerafeed {
   -webkit-user-select: none;
   user-select: none;
-}
-
-/*
- * The 8th Wall camera feed canvas. XRExtras.FullWindowCanvas sizes it, but these
- * rules guarantee it fills the viewport and stays behind the React UI layer.
- */
-#camerafeed {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -96,8 +128,8 @@ body {
 #loadBackground {
   background-color: #0a0a0a !important;
   background-image:
-    radial-gradient(60% 45% at 50% 18%, rgba(56, 189, 248, 0.16), transparent 70%),
-    radial-gradient(55% 40% at 50% 92%, rgba(16, 185, 129, 0.12), transparent 70%) !important;
+    radial-gradient(60% 45% at 50% 18%, rgba(255, 212, 90, 0.14), transparent 70%),
+    radial-gradient(55% 40% at 50% 92%, rgba(43, 179, 168, 0.14), transparent 70%) !important;
 }
 
 #loadingContainer {
@@ -155,27 +187,9 @@ body {
   }
 }
 
-/*
- * The stock icon is a flat grey PNG that clashes with our line-art UI. Hiding the
- * image and drawing a bordered circle keeps the module's markup untouched while
- * matching the start screen's step badges.
- */
+/* The stock icon is a flat grey placeholder PNG; the card reads better as text alone. */
 #requestingCameraIcon {
   display: none !important;
-}
-
-#requestingCameraPermissions::before {
-  content: "📷";
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin: 0 auto 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.05);
-  font-size: 1rem;
 }
 
 /*
@@ -241,8 +255,8 @@ body {
 #microphonePermissionsErrorAndroid {
   background-color: #0a0a0a !important;
   background-image:
-    radial-gradient(60% 45% at 50% 18%, rgba(56, 189, 248, 0.16), transparent 70%),
-    radial-gradient(55% 40% at 50% 92%, rgba(16, 185, 129, 0.12), transparent 70%) !important;
+    radial-gradient(60% 45% at 50% 18%, rgba(255, 212, 90, 0.14), transparent 70%),
+    radial-gradient(55% 40% at 50% 92%, rgba(43, 179, 168, 0.14), transparent 70%) !important;
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;

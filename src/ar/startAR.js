@@ -9,8 +9,9 @@
  */
 import * as THREE from 'three'
 
+import {TRACKING} from '../config'
 import {createImageTargetPipelineModule} from './imageTargetPipelineModule'
-import {trackingStore, TrackingState} from './trackingStore'
+import {trackingStore} from './trackingStore'
 
 /**
  * The engine's ThreeJS pipeline module reads THREE off the window and throws
@@ -21,23 +22,29 @@ import {trackingStore, TrackingState} from './trackingStore'
  */
 window.THREE = THREE
 
-/** Must match the `name` the image-target-cli was given. */
-export const TARGET_NAME = 'supradyn-bottle'
-
 /**
- * Public URL of the generated cylindrical target metadata.
- *
- * Fetched at runtime rather than imported: Vite forbids importing from `public/`
- * ("Assets in public directory cannot be imported from JavaScript"). The files must
- * stay in `public/image-targets/` because the engine resolves the `imagePath` field
- * inside this JSON as a site-root URL at runtime, so the assets must be served
- * verbatim — unhashed and unbundled.
- *
- * This is the 60-TABLET SKU target (barcode 8904003452786), generated from
- * raw_files/60_curvas.ai. The archived 30-tablet assets in
- * raw_files/_old_30tablet_target/ must never be referenced here.
+ * Target metadata is fetched at runtime rather than imported: Vite forbids importing
+ * from `public/`, and the engine resolves each JSON's `imagePath` as a site-root URL,
+ * so the files must be served verbatim from public/image-targets/.
  */
-const TARGET_JSON_URL = '/image-targets/supradyn-bottle.json'
+const targetUrl = name => `/image-targets/${name}.json`
+
+/** Loads every configured target; a missing one is skipped, all missing is fatal. */
+const loadTargets = async () => {
+  const results = await Promise.all(TRACKING.targets.map(async (name) => {
+    try {
+      const res = await fetch(targetUrl(name))
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (!data?.imagePath || data.name !== name) throw new Error('malformed metadata')
+      return data
+    } catch (err) {
+      console.warn(`[AR] skipping target "${name}" (${targetUrl(name)}): ${err.message}`)
+      return null
+    }
+  }))
+  return results.filter(Boolean)
+}
 
 let started = false
 
@@ -133,33 +140,14 @@ export const startAR = async (canvas) => {
       return
     }
 
-    // Load the generated target metadata. Fail loudly if it is missing or malformed,
-    // rather than starting the camera and silently never detecting anything.
-    let bottleTargetData
-    try {
-      const res = await fetch(TARGET_JSON_URL)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      bottleTargetData = await res.json()
-    } catch (err) {
+    const targets = await loadTargets()
+    if (!targets.length) {
       trackingStore.setError(
-        `Could not load image target metadata from ${TARGET_JSON_URL} (${err.message}). ` +
-        'Run: npm run generate-target'
+        'Could not load any image target from /image-targets/. Run: npm run generate-targets'
       )
       return
     }
-
-    if (!bottleTargetData?.imagePath || !bottleTargetData?.name) {
-      trackingStore.setError(
-        'Image target metadata is malformed. Run: npm run generate-target'
-      )
-      return
-    }
-
-    console.log('[AR] loaded target', {
-      name: bottleTargetData.name,
-      type: bottleTargetData.type,
-      arcAngle: bottleTargetData.properties?.arcAngle,
-    })
+    console.log('[AR] loaded targets', targets.map(t => t.name))
 
     await waitForXR8()
 
@@ -175,7 +163,7 @@ export const startAR = async (canvas) => {
     // its own. Per the API docs this MUST be set before XR8.run().
     XR8.XrController.configure({
       disableWorldTracking: true,
-      imageTargetData: [bottleTargetData],
+      imageTargetData: targets,
     })
 
     // XRExtras / LandingPage come from separate CDN scripts. They are helpers, not
@@ -195,7 +183,7 @@ export const startAR = async (canvas) => {
           extras.RuntimeError.pipelineModule(),      // Shows runtime errors instead of a blank page.
         ]
         : []),
-      createImageTargetPipelineModule(TARGET_NAME),
+      createImageTargetPipelineModule(targets.map(t => t.name)),
     ])
 
     if (!extras) {
@@ -212,5 +200,3 @@ export const startAR = async (canvas) => {
     trackingStore.setError(message)
   }
 }
-
-export {TrackingState}
