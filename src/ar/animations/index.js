@@ -15,9 +15,11 @@ import {AnimationId} from '../../config'
 import {createNutrientSystem} from '../nutrientSystem'
 import {createProductOutline} from '../productOutline'
 import {createSettleEffect} from '../settleEffect'
+import {createTypography} from '../typography'
 
 export const ANIMATION_FACTORIES = {
   [AnimationId.PRODUCT_OUTLINE]: createProductOutline,
+  [AnimationId.TYPOGRAPHY]: createTypography,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
   [AnimationId.SETTLE]: createSettleEffect,
 }

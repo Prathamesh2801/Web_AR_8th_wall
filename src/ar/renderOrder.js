@@ -26,8 +26,7 @@ export const RenderOrder = {
   /** Depth-only proxy. Must precede everything so its depth is available. */
   OCCLUDER: -1,
 
-  /** Settle: broad soft fields that everything else sits in front of. */
-  SETTLE_BASE_GLOW: 10,
+  /** Glow: the soft halo that everything else sits in front of. */
   SETTLE_AURA: 11,
 
   /** Product silhouette outline (depthTest off; drawn over the glow, under nodes). */
@@ -38,8 +37,7 @@ export const RenderOrder = {
   /** Tethers connecting nodes to the bottle. */
   ORBIT_TETHER: 21,
 
-  /** Settle: discrete bright elements. */
-  SETTLE_RIBBON: 30,
+  /** Glow: embers. */
   SETTLE_EMBERS: 31,
 
   /** Node halos, then their solid cores. */
@@ -48,7 +46,4 @@ export const RenderOrder = {
 
   /** Text last: a label must stay readable over anything it overlaps. */
   LABEL: 50,
-
-  /** Debug wireframe sits above all content. */
-  OUTLINE: 999,
 }

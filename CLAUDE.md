@@ -7,7 +7,7 @@ open-source 8th Wall engine (2026). No backend, no account, no API keys, **no `.
 ## Commands
 
 ```bash
-npm run dev               # HTTPS dev server on the LAN (camera needs HTTPS) — open the Network URL on a phone
+npm run dev               # HTTPS dev server on the LAN (camera needs HTTPS) â€” open the Network URL on a phone
 npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
@@ -30,12 +30,14 @@ src/ar/               engine + three.js. NO React imports in this folder.
   renderOrder.js        fixed draw order for every transparent layer
   animations/index.js   id -> factory registry
   productOutline.js     animation: traces the bottle's silhouette on detection (default on)
-  nutrientSystem.js     animation: nutrients orbiting on 3 rings (tap for card; off until chosen)
-  settleEffect.js       animation: golden glow that settles into an aura (off until chosen)
+  typography.js         animation A01: printed GINSENG lifts off in 3D, then revolves (off until chosen)
+  nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
+  settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       nutrient values, transcribed from the label artwork
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
 src/components/ar/    2D UI: StartScreen, AROverlay, NutrientCard, DebugPanel, ErrorFallback
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
+public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)
 public/image-targets/ generated targets: JSON + luminance PNG only (the engine fetches just imagePath)
 brand-assets/         brand reference: README (product facts + shape), label/ + reference/ (committed), photos/ (local)
 ```
@@ -58,15 +60,15 @@ Rules every animation must follow (each one was a real bug here):
 - Size everything from `geometry` (radius/height in engine units). Never hardcode bottle size.
 - `update` must not allocate; integrate time with a clamped `dt` (never `t * speed`).
 - Keep `depthTest: true` so the occlusion proxy hides the far side (sole exception:
-  productOutline, which draws the product's own edge — see its header).
+  productOutline, which draws the product's own edge â€” see its header).
 - Give every transparent mesh a `renderOrder` from `renderOrder.js` (else it flickers).
-- Use `PRODUCT.profile` (config.js) for anything shaped to the bottle — it is the one
+- Use `PRODUCT.profile` (config.js) for anything shaped to the bottle â€” it is the one
   bottle model; the outline and the occluder are both built from it. Edit the shape in
   `BOTTLE_MM` (millimetres, heights from the table), never the converted profile.
 
 ## Tracking facts (verified in the engine source, don't "fix" these)
 
-- `XrController.configure({imageTargetData})` — not `imageTargets`.
+- `XrController.configure({imageTargetData})` â€” not `imageTargets`.
 - `data-preload-chunks="slam"` is required (it attaches `XR8.XrController`), while
   `disableWorldTracking: true` keeps SLAM off.
 - CLI writes `CYLINDER`, runtime reports `CYLINDRICAL`; both accepted.
@@ -89,7 +91,7 @@ results in the README test checklist. Do not claim tracking works from a desktop
 - XRExtras injects an unlayered `* {font-family: inherit; box-sizing: inherit}` that beats
   every Tailwind layer. `html` in index.css restores border-box + the font; never rely on
   `font-*` family utilities (use `tabular-nums` for figures).
-- Check UI at phone sizes (360x640, 375x667) with the XRExtras script loaded — a desktop
+- Check UI at phone sizes (360x640, 375x667) with the XRExtras script loaded â€” a desktop
   preview without it hides the box-sizing problem above.
 - Comments explain *why* (the bug or engine fact behind a line), not what.
-- XR Engine binary licence: its copyright notice must stay intact — load it unmodified.
+- XR Engine binary licence: its copyright notice must stay intact â€” load it unmodified.

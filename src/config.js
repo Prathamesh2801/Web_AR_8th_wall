@@ -70,12 +70,26 @@ const BOTTLE_MM = {
  * The same profile in the units the engine reports: y in label heights from the
  * label's centre (label = -0.5..0.5), radius in label radii. Use this in animations.
  */
+const profile = BOTTLE_MM.profile.map(([h, r]) => [
+  (h - BOTTLE_MM.labelBottom) / BOTTLE_MM.labelHeight - 0.5,
+  r / (BOTTLE_MM.circumference / (2 * Math.PI)),
+])
+
 export const PRODUCT = {
   mm: BOTTLE_MM,
-  profile: BOTTLE_MM.profile.map(([h, r]) => [
-    (h - BOTTLE_MM.labelBottom) / BOTTLE_MM.labelHeight - 0.5,
-    r / (BOTTLE_MM.circumference / (2 * Math.PI)),
-  ]),
+  profile,
+  /** Bottle radius (label radii) at height y (label heights), clamped to base..cap. */
+  radiusAt: (y) => {
+    if (y <= profile[0][0]) return profile[0][1]
+    for (let i = 1; i < profile.length; i++) {
+      const [y1, r1] = profile[i]
+      if (y <= y1) {
+        const [y0, r0] = profile[i - 1]
+        return r0 + (r1 - r0) * ((y - y0) / (y1 - y0 || 1))
+      }
+    }
+    return profile[profile.length - 1][1]
+  },
 }
 
 /** Image-target tracking. */
@@ -106,6 +120,7 @@ export const TRACKING = {
 /** Stable ids, so debug output, UI and config keys cannot drift apart. */
 export const AnimationId = {
   PRODUCT_OUTLINE: 'productOutline',
+  TYPOGRAPHY: 'typography',
   NUTRIENT_ORBIT: 'nutrientOrbit',
   SETTLE: 'settle',
 }
@@ -137,6 +152,29 @@ export const ANIMATIONS = {
     showBase: true,            // false = stop at the label's bottom edge
   },
 
+  /**
+   * A01 3D Typography (Penpot): the printed GINSENG is recognised (gold shimmer), lifts
+   * off the label letter by letter into 3D, then slowly revolves round the bottle.
+   */
+  [AnimationId.TYPOGRAPHY]: {
+    enabled: true,
+    active: false,
+    label: 'Type',
+
+    faceColor: '#E2483B',    // letter faces (label red, lifted)
+    sideColor: '#D9A23A',    // extrusion sides + bevel: brand gold edge
+    shimmerColor: '#FFF1A8', // the recognise sweep
+
+    // Calibration: the flat GINSENG must start exactly on the printed one. If it sits
+    // beside it on the phone, rotate it round the bottle here (+ = to the right).
+    printAzimuthDeg: 0,
+
+    letterHeight: 0.2,   // lifted letters, x label height
+    radius: 1.3,         // orbit radius, x bottle radius
+    height: 0,           // orbit height, x label height from its centre (print is at -0.25)
+    revolveSpeed: 0.07,  // rev/s once revolving (~14s per turn)
+  },
+
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */
   [AnimationId.NUTRIENT_ORBIT]: {
     enabled: true,
@@ -151,27 +189,23 @@ export const ANIMATIONS = {
     label: 'Glow',
 
     // Palette
-    glowColor: '#FFD45A', // primary gold
-    highlightColor: '#FFF1A8', // bright edge highlight
-    deepColor: '#D99A22', // deep warm gold, outer aura and base
+    highlightColor: '#FFF1A8', // hot light right at the bottle's edge
+    deepColor: '#D99A22', // warm gold it fades to further out
     emberColor: '#FFF8D6', // very soft warm white sparks
 
     // Timing
-    entranceDuration: 2000, // ms for the full entrance, peak at ~60%
-    energySpeed: 1.6, // ribbon revolutions per second at peak
+    entranceDuration: 2400, // ms: light rises base -> cap, blooms (peak ~60%), settles
 
-    // Aura shell radii, as multiples of the tracked bottle radius. Kept tight: widely
-    // spaced shells sum into a thick sheath rather than a thin rim of light.
-    innerGlowScale: 1.005,
-    middleGlowScale: 1.018,
-    outerGlowScale: 1.04,
+    // Halo, measured from the bottle's real silhouette (PRODUCT.profile)
+    glowReach: 0.9,    // how far the light can extend, x bottle radius
+    glowFalloff: 0.12, // resting softness: light halves every ~0.7x this, x bottle radius
 
     // Embers
-    particleCount: 120,
-    particleSpread: 1.14, // outermost particle radius, in bottle radii
+    particleCount: 30,
+    particleSpread: 1.2, // outermost ember distance off the surface, in bottle radii (+1)
 
     // Resting state
-    finalAuraOpacity: 0.22, // steady rim intensity after settling
+    finalAuraOpacity: 0.75, // resting brightness, x the entrance peak
     finalPulseSpeed: 0.55, // rad/s of the resting breath
   },
 }

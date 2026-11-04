@@ -36,6 +36,15 @@ cuts three overlapping crops (pixel ranges along the label's length):
 The batch/MFG/expiry box is blank in the artwork but printed per batch on real bottles,
 so the left crop's match can be slightly weaker there.
 
+### Typography (A01)
+
+The printed GINSENG headline's box (1668,877)-(2223,979) is `PRINT` in
+`src/ar/typography.js`: the 3D word starts exactly there.
+
+`public/fonts/montserrat-800.typeface.json`: Montserrat ExtraBold (closest to the
+headline type), A-Z only, converted from the OFL TTF with opentype.js. Licence:
+`public/fonts/OFL.txt` (must ship with the font).
+
 ## Brand palette (sampled, not eyeballed)
 
 k-means over the production label artwork, plus the bottle plastic from `photos/`.
