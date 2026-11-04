@@ -1,5 +1,5 @@
 /**
- * Developer-only switch for the debug panel. Rendered only when the URL has `?debug`
+ * Developer-only switch for the dashboard. Rendered only when the URL has `?debug`
  * (see App.jsx), so normal users never see it. Never touches the AR pipeline.
  */
 export const DebugToggle = ({on, onToggle}) => (
@@ -11,6 +11,6 @@ export const DebugToggle = ({on, onToggle}) => (
       on ? 'border-gold/50 bg-gold/20 text-white' : 'border-white/15 bg-black/40 text-white/60'
     }`}
   >
-    DEBUG
+    TUNE
   </button>
 )

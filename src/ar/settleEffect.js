@@ -21,6 +21,7 @@
 import * as THREE from 'three'
 
 import {PRODUCT} from '../config'
+import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 
 const easeOut = t => 1 - (1 - t) ** 3
@@ -208,6 +209,9 @@ export const createSettleEffect = (cfg) => {
     const D = cfg.entranceDuration / 1000
 
     if (camera) root.worldToLocal(u.uCam.value.setFromMatrixPosition(camera.matrixWorld))
+    liveColor(u.uInner.value, cfg.highlightColor)
+    liveColor(u.uOuter.value, cfg.deepColor)
+    liveColor(s.emberMat.uniforms.uColor.value, cfg.emberColor)
 
     // Reveal sweeps base -> just past the cap in the first half of the entrance.
     const rise = easeInOut(clamp01(age / (D * 0.5)))

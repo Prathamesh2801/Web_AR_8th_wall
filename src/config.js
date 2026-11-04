@@ -17,10 +17,14 @@
  *        setUserSpeed(v)           debug speed multiplier, 0..3
  *        getPickables() -> Mesh[]  tappable meshes; set `mesh.userData.pick = item`
  *        setSelected(id|null)      reflect the tapped item's id
- *        getDebugInfo() -> object  merged into the debug panel
+ *        getDebugInfo() -> object  merged into the dashboard's Stats
  *   2. Add an id to `AnimationId` and an entry in `ANIMATIONS` below.
  *   3. Register the factory in src/ar/animations/index.js.
- *   It then appears as a chip in the AR screen. bottleScene.js needs no changes.
+ *   It then appears as a chip in the AR screen and a tab in the dashboard (`?debug`),
+ *   which edits these objects IN PLACE: read knobs from your config every frame (use
+ *   liveColor() for colours) and they tune live. `delay` (s) is handled by bottleScene:
+ *   it holds the animation back that long after a (re)start, so effects play in sync.
+ *   bottleScene.js needs no changes.
  *
  * Invariants every animation must keep: materials keep `depthTest: true` (so the
  * occlusion proxy can hide the far side) and transparent meshes take a fixed
@@ -140,6 +144,7 @@ export const ANIMATIONS = {
     enabled: true,
     active: true,
     label: 'Outline',
+    delay: 0,                  // s after sync start
 
     color: '#FFD45A',          // silhouette lines (shape = PRODUCT.profile)
     labelBandColor: '#7FE3D3', // rings at the tracked label's top/bottom edges
@@ -153,26 +158,58 @@ export const ANIMATIONS = {
   },
 
   /**
-   * A01 3D Typography (Penpot): the printed GINSENG is recognised (gold shimmer), lifts
-   * off the label letter by letter into 3D, then slowly revolves round the bottle.
+   * A01 3D Typography (Penpot): printed words come to life — a shimmer, then they lift
+   * off the label letter by letter into 3D, revolve, land back on their print and
+   * settle into it. Each word has its own controls below.
    */
   [AnimationId.TYPOGRAPHY]: {
     enabled: true,
     active: false,
     label: 'Type',
+    delay: 0,                // s after sync start (dashboard: Replay all)
 
-    faceColor: '#E2483B',    // letter faces (label red, lifted)
-    sideColor: '#D9A23A',    // extrusion sides + bevel: brand gold edge
-    shimmerColor: '#FFF1A8', // the recognise sweep
+    shimmerColor: '#FFF1A8', // the recognise / farewell sweep
 
-    // Calibration: the flat GINSENG must start exactly on the printed one. If it sits
-    // beside it on the phone, rotate it round the bottle here (+ = to the right).
+    // Calibration: each flat word must start exactly on its print. If they sit beside
+    // it on the phone, rotate them round the bottle here (+ = to the right).
     printAzimuthDeg: 0,
 
-    letterHeight: 0.2,   // lifted letters, x label height
-    radius: 1.3,         // orbit radius, x bottle radius
-    height: 0,           // orbit height, x label height from its centre (print is at -0.25)
-    revolveSpeed: 0.07,  // rev/s once revolving (~14s per turn)
+    words: {
+      supradyn: {
+        show: true,
+        faceColor: '#231F20',  // the logo's printed ink (sampled from the label)
+        sideColor: '#3D3638',  // same ink, a shade lighter so the depth reads
+        glowColor: '#FFC84A',
+        glow: 0.18,            // gold glow behind the letters, 0..1
+        slantDeg: 12,          // the logo's italic
+        letterHeight: 0.22,    // lifted letters, x label height
+        radius: 1.45,          // orbit radius, x bottle radius
+        height: 0.45,          // orbit height, x label height from its centre (print +0.26)
+        direction: -1,         // 1 = front moves right, -1 = left
+        speed: 0.1,            // rev/s
+        rounds: 2,             // whole turns before it lands back on its print
+        delay: 0.3,            // s after the animation starts
+        loop: false,           // replay after exiting
+        loopPause: 1.5,        // s between loops
+      },
+      ginseng: {
+        show: true,
+        faceColor: '#E2483B',  // label red
+        sideColor: '#D9A23A',
+        glowColor: '#FFC84A',
+        glow: 0.2,
+        slantDeg: 0,
+        letterHeight: 0.2,
+        radius: 1.3,
+        height: 0,             // print is at -0.25
+        direction: 1,
+        speed: 0.1,
+        rounds: 2,
+        delay: 0,
+        loop: false,
+        loopPause: 1.5,
+      },
+    },
   },
 
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */
@@ -180,6 +217,8 @@ export const ANIMATIONS = {
     enabled: true,
     active: false,
     label: 'Nutrients',
+    delay: 0,
+    orbitSpeed: 1,  // x each ring's base speed
   },
 
   /** Warm golden energy gathers, peaks, then settles into a calm aura. */
@@ -187,6 +226,7 @@ export const ANIMATIONS = {
     enabled: true,
     active: false,
     label: 'Glow',
+    delay: 0,
 
     // Palette
     highlightColor: '#FFF1A8', // hot light right at the bottle's edge
@@ -219,7 +259,7 @@ export const OCCLUSION = {
 }
 
 /**
- * Debug UI. The DEBUG button is hidden from normal users; open the app with `?debug`
+ * Dashboard (TUNE button). Hidden from normal users; open the app with `?debug`
  * in the URL to show it.
  */
 export const DEBUG = {

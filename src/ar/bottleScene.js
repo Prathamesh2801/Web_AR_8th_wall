@@ -26,9 +26,13 @@ export const createBottleScene = ({onSelect} = {}) => {
   if (OCCLUSION.enabled) anchor.add(occluder.group)
 
   /**
-   * Every enabled animation, instantiated once. `active` ones are visible and updated;
-   * inactive ones stay built but cost nothing per frame. An id with no factory is
-   * reported and skipped: a config typo should not take down the experience.
+   * Every enabled animation, instantiated once. `on` ones are updated; the rest stay
+   * built but cost nothing per frame. An id with no factory is reported and skipped:
+   * a config typo should not take down the experience.
+   *
+   * `wait` (ms) holds a just-(re)started animation back by its config `delay`, hidden,
+   * so several effects started together play in sync; when it runs out the animation's
+   * entrance restarts.
    */
   const animations = enabledAnimationIds().flatMap((id) => {
     const factory = ANIMATION_FACTORIES[id]
@@ -36,12 +40,21 @@ export const createBottleScene = ({onSelect} = {}) => {
       console.warn(`[AR] no factory registered for animation "${id}" - skipping`)
       return []
     }
-    const instance = factory(animationConfig(id))
-    instance.root.visible = Boolean(ANIMATIONS[id].active)
+    const cfg = animationConfig(id)
+    const instance = factory(cfg)
+    instance.root.visible = false
     anchor.add(instance.root)
-    return [{id, instance}]
+    return [{id, instance, cfg, on: false, wait: 0, starting: false}]
   })
-  const active = () => animations.filter(a => a.instance.root.visible)
+  const active = () => animations.filter(a => a.on)
+
+  const start = (a) => {
+    a.on = true
+    a.wait = (a.cfg.delay ?? 0) * 1000
+    a.starting = true
+    a.instance.root.visible = false
+  }
+  animations.filter(a => ANIMATIONS[a.id].active).forEach(start)
 
   console.log('[AR] animations enabled:', animations.map(a => a.id))
 
@@ -68,7 +81,8 @@ export const createBottleScene = ({onSelect} = {}) => {
   /** Screen tap -> the `userData.pick` of the nearest pickable mesh, if any. */
   const handleTap = (clientX, clientY) => {
     if (!camera || !canvas || !anchor.visible) return
-    const pickables = active().flatMap(({instance}) => instance.getPickables?.() ?? [])
+    const pickables = active().filter(a => a.instance.root.visible)
+      .flatMap(({instance}) => instance.getPickables?.() ?? [])
     if (!pickables.length) return
 
     const rect = canvas.getBoundingClientRect()
@@ -116,7 +130,7 @@ export const createBottleScene = ({onSelect} = {}) => {
     if (!anchor.visible) {
       // Re-acquired. A long absence replays the entrance; a dropout does not.
       if (lostAt !== null && performance.now() - lostAt > TRACKING.replayAfterMs) {
-        forEachActive('restartEntrance')
+        active().forEach(start)
       }
       lostAt = null
       snapNext = true
@@ -147,18 +161,33 @@ export const createBottleScene = ({onSelect} = {}) => {
     anchor.quaternion.slerp(target.quaternion, k)
     anchor.scale.setScalar(anchor.scale.x + (target.scale - anchor.scale.x) * k)
 
-    for (const {instance} of active()) instance.update(timeMs, camera)
-  }
-
-  /** Switches animations on/off at runtime. Newly shown ones replay their entrance. */
-  const setActiveAnimations = (ids) => {
-    for (const {id, instance} of animations) {
-      const on = ids.includes(id)
-      if (on && !instance.root.visible) instance.restartEntrance?.()
-      if (!on) instance.setSelected?.(null)
-      instance.root.visible = on
+    for (const a of active()) {
+      if (a.starting) {
+        a.wait -= dt
+        if (a.wait > 0) continue
+        a.starting = false
+        a.instance.restartEntrance?.()
+        a.instance.root.visible = true
+      }
+      a.instance.update(timeMs, camera)
     }
   }
+
+  /** Switches animations on/off at runtime. Newly switched-on ones start (after delay). */
+  const setActiveAnimations = (ids) => {
+    for (const a of animations) {
+      const on = ids.includes(a.id)
+      if (on && !a.on) start(a)
+      if (!on) {
+        a.on = false
+        a.instance.setSelected?.(null)
+        a.instance.root.visible = false
+      }
+    }
+  }
+
+  /** Restarts the given (default: every active) animations together, each after its delay. */
+  const replay = (ids) => active().filter(a => !ids || ids.includes(a.id)).forEach(start)
 
   const getDebugInfo = () => ({
     ...active().reduce((acc, {instance}) => ({...acc, ...(instance.getDebugInfo?.() ?? {})}), {}),
@@ -167,7 +196,7 @@ export const createBottleScene = ({onSelect} = {}) => {
   })
 
   return {
-    addToScene, applyPose, fitToGeometry, hide, update, getDebugInfo, setActiveAnimations,
+    addToScene, applyPose, fitToGeometry, hide, update, getDebugInfo, setActiveAnimations, replay,
     setSelected: id => forEachActive('setSelected', id),
     setSpeed: v => animations.forEach(({instance}) => instance.setUserSpeed?.(v)),
   }

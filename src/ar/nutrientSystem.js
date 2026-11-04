@@ -80,7 +80,7 @@ const paletteFor = (n, idx) => {
   return {core: tone(base.core, 0.18, 0.35, 0.8, spread * 0.1), glow: tone(base.glow, 0.22, 0.3, 0.75, 0)}
 }
 
-export const createNutrientSystem = () => {
+export const createNutrientSystem = (cfg) => {
   const root = new THREE.Group()
 
   let s = null
@@ -183,7 +183,7 @@ export const createNutrientSystem = () => {
 
     // Integrated, never `t * speed`: a speed change must not rewrite past motion.
     speedScale += (speedTarget - speedScale) * 0.08
-    orbitPhase += dt * speedScale * userSpeed
+    orbitPhase += dt * speedScale * userSpeed * (cfg.orbitSpeed ?? 1)
 
     const pathIn = clamp01((age - T.pathsAt) / 0.8)
     for (const p of s.paths) p.material.opacity = pathIn * 0.12

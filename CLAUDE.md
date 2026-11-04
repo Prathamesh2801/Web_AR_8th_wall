@@ -14,7 +14,9 @@ npm test                  # node --test (src/**/*.test.js)
 npm run generate-targets  # rebuild public/image-targets/* from the flat label PNG
 ```
 
-Append `?debug` to the URL to get the DEBUG button (telemetry, occlusion outline, speed).
+Append `?debug` to the URL to get the TUNE button: the dashboard (src/components/ar/Dashboard.jsx).
+It edits `ANIMATIONS` in place, live: per-animation knobs, start delays + "Replay all in sync",
+speed, stats. Edits persist in that browser only; "Copy settings" -> paste into config.js.
 
 ## Where things live
 
@@ -30,12 +32,14 @@ src/ar/               engine + three.js. NO React imports in this folder.
   renderOrder.js        fixed draw order for every transparent layer
   animations/index.js   id -> factory registry
   productOutline.js     animation: traces the bottle's silhouette on detection (default on)
-  typography.js         animation A01: printed GINSENG lifts off in 3D, then revolves (off until chosen)
+  typography.js         animation A01: Supradyn + GINSENG lift off their print in 3D, revolve N rounds, land back (off until chosen)
+  liveColor.js          applies a config colour only when it changed (live tuning without per-frame parsing)
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       nutrient values, transcribed from the label artwork
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
-src/components/ar/    2D UI: StartScreen, AROverlay, NutrientCard, DebugPanel, ErrorFallback
+src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
+src/components/ar/    2D UI: StartScreen, AROverlay, NutrientCard, Dashboard, ErrorFallback
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
 public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)
 public/image-targets/ generated targets: JSON + luminance PNG only (the engine fetches just imagePath)
@@ -53,7 +57,8 @@ brand-assets/         brand reference: README (product facts + shape), label/ + 
 
 1. `src/ar/<name>.js`: factory `(config) => ({root, build(geometry), update(timeMs, camera), ...optional})`.
    Full contract is at the top of `src/config.js`.
-2. Add an `AnimationId` + `ANIMATIONS` entry (`enabled`, `active`, `label`, your knobs).
+2. Add an `AnimationId` + `ANIMATIONS` entry (`enabled`, `active`, `label`, `delay`, your knobs).
+   Read knobs from config every frame and they become live dashboard controls for free.
 3. Register in `src/ar/animations/index.js`. It shows up as a chip; `bottleScene` is untouched.
 
 Rules every animation must follow (each one was a real bug here):

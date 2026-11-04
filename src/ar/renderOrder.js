@@ -44,6 +44,9 @@ export const RenderOrder = {
   NODE_HALO: 40,
   NODE_CORE: 41,
 
+  /** Typography: additive gold glow behind the (opaque) 3D letters. */
+  TYPE_GLOW: 45,
+
   /** Text last: a label must stay readable over anything it overlaps. */
   LABEL: 50,
 }

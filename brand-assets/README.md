@@ -38,11 +38,13 @@ so the left crop's match can be slightly weaker there.
 
 ### Typography (A01)
 
-The printed GINSENG headline's box (1668,877)-(2223,979) is `PRINT` in
-`src/ar/typography.js`: the 3D word starts exactly there.
+Printed word boxes (source px, x0-x1 and cap top -> baseline) are `ART` in
+`src/ar/typography.js`, so each 3D word starts exactly on its print:
+GINSENG x 1668-2223, y 877-979; Supradyn logo x 1756-2275, y 244-354 (ink #231F20,
+slanted ~12 deg).
 
 `public/fonts/montserrat-800.typeface.json`: Montserrat ExtraBold (closest to the
-headline type), A-Z only, converted from the OFL TTF with opentype.js. Licence:
+headline type), A-Z + a-z only, converted from the OFL TTF with opentype.js. Licence:
 `public/fonts/OFL.txt` (must ship with the font).
 
 ## Brand palette (sampled, not eyeballed)

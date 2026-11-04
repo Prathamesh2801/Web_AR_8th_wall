@@ -23,6 +23,7 @@
 import * as THREE from 'three'
 
 import {PRODUCT} from '../config'
+import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 
 const easeOut = t => 1 - Math.pow(1 - t, 3)
@@ -107,6 +108,9 @@ export const createProductOutline = (cfg) => {
     const rings = clamp01((age - D * 0.6) / (D * 0.5))
 
     // A slow breath once drawn, so it reads as live rather than a static sticker.
+    liveColor(edgeMat.color, cfg.color)
+    liveColor(ringMat.color, cfg.color)
+    liveColor(bandMat.color, cfg.labelBandColor)
     const breath = 1 - (1 - Math.cos(Math.max(0, age - D) * cfg.pulseSpeed)) * 0.12
     edgeMat.opacity = cfg.opacity * breath
     ringMat.opacity = cfg.opacity * breath * rings
