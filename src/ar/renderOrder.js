@@ -36,6 +36,10 @@ export const RenderOrder = {
   ORBIT_PATH: 20,
   /** Tethers connecting nodes to the bottle. */
   ORBIT_TETHER: 21,
+  /** Ticker rings: far halves (+ ring index), seen past the bottle's sides. */
+  TICKER_BACK: 12,
+  /** Callouts: leader lines (+1: their dots). */
+  CALLOUT_LINE: 22,
 
   /** Glow: embers. */
   SETTLE_EMBERS: 31,
@@ -44,9 +48,13 @@ export const RenderOrder = {
   NODE_HALO: 40,
   NODE_CORE: 41,
 
+  /** Ticker rings: front halves (+ ring index). */
+  TICKER_FRONT: 43,
   /** Typography: additive gold glow behind the (opaque) 3D letters. */
   TYPE_GLOW: 45,
 
   /** Text last: a label must stay readable over anything it overlaps. */
   LABEL: 50,
+  /** Callout cards (typed feature text). */
+  CALLOUT_CARD: 51,
 }

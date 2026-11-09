@@ -12,14 +12,18 @@
  * without reaching back into the config module.
  */
 import {AnimationId} from '../../config'
+import {createCallouts} from '../callouts'
 import {createNutrientSystem} from '../nutrientSystem'
 import {createProductOutline} from '../productOutline'
 import {createSettleEffect} from '../settleEffect'
+import {createTickerRings} from '../tickerRings'
 import {createTypography} from '../typography'
 
 export const ANIMATION_FACTORIES = {
   [AnimationId.PRODUCT_OUTLINE]: createProductOutline,
   [AnimationId.TYPOGRAPHY]: createTypography,
+  [AnimationId.CALLOUTS]: createCallouts,
+  [AnimationId.TICKER]: createTickerRings,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
   [AnimationId.SETTLE]: createSettleEffect,
 }

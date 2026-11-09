@@ -34,6 +34,8 @@ src/ar/               engine + three.js. NO React imports in this folder.
   animations/index.js   id -> factory registry
   productOutline.js     animation: traces the bottle's silhouette on detection (default on)
   typography.js         animation A01: Supradyn + GINSENG lift off their print in 3D, revolve N rounds, land back (off until chosen)
+  tickerRings.js        Typography style "Ticker": tilted text bands round the bottle, scrolling opposite ways; unfold in / fold out
+  callouts.js           Typography style "Callouts": dot -> leader line -> card, text typed in; screen-left/right of the bottle, shrink to fit; exits in reverse
   liveColor.js          applies a config colour only when it changed (live tuning without per-frame parsing)
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
@@ -83,7 +85,7 @@ Rules every animation must follow (each one was a real bug here):
 - Size everything from `geometry` (radius/height in engine units). Never hardcode bottle size.
 - `update` must not allocate; integrate time with a clamped `dt` (never `t * speed`).
 - Keep `depthTest: true` so the occlusion proxy hides the far side (sole exception:
-  productOutline, which draws the product's own edge â€” see its header).
+  productOutline, which draws the product's own edge, and callouts' dots/lines, always on the camera side â€” see its header).
 - Give every transparent mesh a `renderOrder` from `renderOrder.js` (else it flickers).
 - Use `PRODUCT.profile` (config.js) for anything shaped to the bottle â€” it is the one
   bottle model; the outline and the occluder are both built from it. Edit the shape in

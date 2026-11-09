@@ -25,12 +25,15 @@ const RANGE = {
   glowReach: [0.2, 1.5, 0.05], glowFalloff: [0.02, 0.4, 0.01], particleCount: [0, 300, 10],
   particleSpread: [1.05, 2, 0.01], finalAuraOpacity: [0, 1.5, 0.01],
   finalPulseSpeed: [0, 3, 0.05], orbitSpeed: [0, 3, 0.05],
+  stagger: [0, 2000, 50], typeSpeed: [10, 150, 5], cursorLinger: [0, 3000, 100],
+  cardHeight: [0.1, 0.5, 0.01], reach: [1.05, 2.5, 0.01], lineThickness: [0.003, 0.04, 0.001],
+  dotSize: [0.05, 0.4, 0.01], minFit: [0.3, 1, 0.05], tiltDeg: [-30, 30, 0.5], bandHeight: [0.06, 0.4, 0.01], backOpacity: [0, 1, 0.05], followMs: [0, 1500, 50], side: [-1, 1, 2], y: [-0.9, 0.9, 0.01],
   volume: [0, 1, 0.05], lock: [0, 1, 0.05], select: [0, 1, 0.05], snap: [0, 1, 0.05],
 }
 const OPTIONS = {direction: [['← Left', -1], ['Right →', 1]]}
 /** Read once when the effect is built: these need a page reload. */
 const ON_RELOAD = new Set(['glowReach', 'particleCount', 'particleSpread', 'thickness',
-  'showBase', 'showLabelBand', 'slantDeg'])
+  'showBase', 'showLabelBand', 'slantDeg', 'bandHeight'])
 const HIDDEN = new Set(['enabled', 'active', 'label', 'delay'])
 const SPEEDS = [0, 0.5, 1, 2, 3]
 

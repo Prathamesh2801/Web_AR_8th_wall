@@ -18,6 +18,8 @@
  *        getPickables() -> Mesh[]  tappable meshes; set `mesh.userData.pick = item`
  *        setSelected(id|null)      reflect the tapped item's id
  *        getDebugInfo() -> object  merged into the dashboard's Stats
+ *        exit() + isExited()       graceful exit when the user switches away: bottleScene
+ *                                  keeps calling update() until isExited() is true
  *   2. Add an id to `AnimationId` and an entry in `ANIMATIONS` below.
  *   3. Register the factory in src/ar/animations/index.js.
  *   It then appears as a chip in the AR screen and a tab in the dashboard (`?debug`),
@@ -151,6 +153,8 @@ export const TRACKING = {
 export const AnimationId = {
   PRODUCT_OUTLINE: "productOutline",
   TYPOGRAPHY: "typography",
+  CALLOUTS: "callouts",
+  TICKER: "tickerRings",
   NUTRIENT_ORBIT: "nutrientOrbit",
   SETTLE: "settle",
 };
@@ -229,10 +233,10 @@ export const ANIMATIONS = {
         radius: 1.45, // orbit radius, x bottle radius
         height: 0.45, // orbit height, x label height from its centre (print +0.26)
         direction: -1, // 1 = front moves right, -1 = left
-        speed: 0.1, // rev/s
-        rounds: 2, // whole turns before it lands back on its print
+        speed: 0.3, // rev/s
+        rounds: 1, // whole turns before it lands back on its print
         delay: 0.3, // s after the animation starts
-        loop: false, // replay after exiting
+        loop: true, // replay after exiting
         loopPause: 1.5, // s between loops
       },
       ginseng: {
@@ -246,13 +250,77 @@ export const ANIMATIONS = {
         radius: 1.3,
         height: 0, // print is at -0.25
         direction: 1,
-        speed: 0.1,
-        rounds: 2,
+        speed: 0.3,
+        rounds: 1,
         delay: 0,
-        loop: false,
+        loop: true,
         loopPause: 1.5,
       },
     },
+  },
+
+  /**
+   * Feature callouts: a dot on the bottle, a line drawn out to the side, a card whose
+   * text types in. Alternate items left/right; switching away plays it backwards.
+   * Copy is the front label's own claims ("helps boost energy, stamina & mental focus",
+   * "multivitamin for men") — keep new text to what the pack says.
+   */
+  [AnimationId.CALLOUTS]: {
+    enabled: true,
+    active: false,
+    group: "type",
+    label: "Callouts",
+    delay: 0,
+
+    // side: -1 left / 1 right of the bottle on screen; y: where the dot sits on the
+    // label, x label height from its centre (label = -0.5..0.5; keep within ±0.4).
+    // Order = entrance order.
+    items: {
+      energy: {text: "Energy boost", side: -1, y: 0.3},
+      focus: {text: "Mental focus", side: 1, y: 0.15},
+      stamina: {text: "Stamina", side: -1, y: -0.15},
+      men: {text: "Multivitamin", side: 1, y: -0.3},
+    },
+    stagger: 650, // ms between items entering
+    typeSpeed: 45, // ms per letter
+    cursorLinger: 900, // ms the cursor blinks after the text is complete
+
+    lineColor: "#FFD45A",
+    cardColor: "rgba(6, 52, 50, 0.82)", // deep label teal, see-through
+    cardBorderColor: "rgba(255, 212, 90, 0.55)",
+    cardHeight: 0.3, // x label height
+    minFit: 0.55, // cards shrink to stay on screen, down to this x their size
+    followMs: 350, // how gently the layout turns to face you (higher = steadier, laggier)
+    reach: 1.2, // elbow distance from the axis, x bottle radius (card starts ~0.2 further)
+    lineThickness: 0.012, // x bottle radius
+    dotSize: 0.12, // x bottle radius
+  },
+
+  /**
+   * Ticker: text bands wrapped round the bottle, tilted, scrolling opposite ways. The
+   * far side passes behind the bottle. Copy = the front label's own words.
+   * Text, colours, radius and band height are read when built (reload to see edits);
+   * height, tilt, speed and direction are live.
+   */
+  [AnimationId.TICKER]: {
+    enabled: true,
+    active: false,
+    group: "type",
+    label: "Ticker",
+    delay: 0,
+
+    rings: {
+      top: {text: "ENERGY  •  STAMINA  •  MENTAL FOCUS", y: 0.3, radius: 1.3, tiltDeg: 7, speed: 0.05, direction: -1},
+      bottom: {text: "GINSENG  •  MULTIVITAMIN FOR MEN", y: -0.28, radius: 1.42, tiltDeg: -5, speed: 0.04, direction: 1},
+    },
+    bandHeight: 0.19, // x label height
+    entranceDuration: 1100, // ms per ring to unfold (exit takes 60% of it)
+    stagger: 300, // ms between rings
+    backOpacity: 0.3, // the far half, seen past the bottle's sides
+
+    textColor: "#FFFFFF",
+    accentColor: "#FFD45A", // separators + edge rules
+    bandColor: "rgba(6, 52, 50, 0.6)", // see-through label teal behind the text
   },
 
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */

@@ -50,6 +50,7 @@ export const createBottleScene = ({onSelect} = {}) => {
 
   const start = (a) => {
     a.on = true
+    a.leaving = false
     a.wait = (a.cfg.delay ?? 0) * 1000
     a.starting = true
     a.instance.root.visible = false
@@ -161,7 +162,16 @@ export const createBottleScene = ({onSelect} = {}) => {
     anchor.quaternion.slerp(target.quaternion, k)
     anchor.scale.setScalar(anchor.scale.x + (target.scale - anchor.scale.x) * k)
 
-    for (const a of active()) {
+    for (const a of animations) {
+      if (a.leaving) {
+        a.instance.update(timeMs, camera)
+        if (a.instance.isExited()) {
+          a.leaving = false
+          a.instance.root.visible = false
+        }
+        continue
+      }
+      if (!a.on) continue
       if (a.starting) {
         a.wait -= dt
         if (a.wait > 0) continue
@@ -178,10 +188,17 @@ export const createBottleScene = ({onSelect} = {}) => {
     for (const a of animations) {
       const on = ids.includes(a.id)
       if (on && !a.on) start(a)
-      if (!on) {
+      if (!on && a.on) {
         a.on = false
         a.instance.setSelected?.(null)
-        a.instance.root.visible = false
+        // An animation with an exit plays it out (update keeps running until it reports
+        // done); the rest vanish at once.
+        if (a.instance.exit && a.instance.root.visible && !a.starting) {
+          a.leaving = true
+          a.instance.exit()
+        } else {
+          a.instance.root.visible = false
+        }
       }
     }
     // The lock cue (outline) steps back while any other effect plays.
