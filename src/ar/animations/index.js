@@ -13,9 +13,14 @@
  */
 import {AnimationId} from '../../config'
 import {createCallouts} from '../callouts'
+import {createEnergy} from '../energy'
+import {createPlanted} from '../planted'
+import {createScan} from '../scan'
 import {createNutrientSystem} from '../nutrientSystem'
 import {createProductOutline} from '../productOutline'
 import {createSettleEffect} from '../settleEffect'
+import {createSparkle} from '../sparkle'
+import {createSpotlight} from '../spotlight'
 import {createTickerRings} from '../tickerRings'
 import {createTypography} from '../typography'
 
@@ -25,5 +30,10 @@ export const ANIMATION_FACTORIES = {
   [AnimationId.CALLOUTS]: createCallouts,
   [AnimationId.TICKER]: createTickerRings,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
+  [AnimationId.PLANTED]: createPlanted,
   [AnimationId.SETTLE]: createSettleEffect,
+  [AnimationId.SPOTLIGHT]: createSpotlight,
+  [AnimationId.ENERGY]: createEnergy,
+  [AnimationId.SCAN]: createScan,
+  [AnimationId.SPARKLE]: createSparkle,
 }

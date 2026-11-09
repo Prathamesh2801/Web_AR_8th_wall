@@ -26,6 +26,21 @@ export const RenderOrder = {
   /** Depth-only proxy. Must precede everything so its depth is available. */
   OCCLUDER: -1,
 
+  /** Planted: soft contact shadows on the table/soil, under everything else. */
+  PLANTED_SHADOW: 5,
+
+  /** Spotlight: the room-dimming layer, then light on top of it: pool, beam, dust. */
+  SPOT_DIM: 6,
+  SPOT_POOL: 7,
+  SPOT_BEAM: 8,
+  SPOT_DUST: 9,
+
+  /** Energy: charge glow and shockwaves on the table. */
+  ENERGY_GLOW: 10,
+  ENERGY_RING: 13,
+  /** Scan: the laser sheet cutting out from the line. */
+  SCAN_SHEET: 14,
+
   /** Glow: the soft halo that everything else sits in front of. */
   SETTLE_AURA: 11,
 
@@ -52,6 +67,12 @@ export const RenderOrder = {
   TICKER_FRONT: 43,
   /** Typography: additive gold glow behind the (opaque) 3D letters. */
   TYPE_GLOW: 45,
+  /** Energy arcs: over everything on the bottle except text. */
+  ENERGY_BOLT: 46,
+  /** Scan hologram shell; Sparkle stars + the cap flash. */
+  SCAN_HOLO: 47,
+  SPARKLE: 48,
+  SPARKLE_FLASH: 49,
 
   /** Text last: a label must stay readable over anything it overlaps. */
   LABEL: 50,

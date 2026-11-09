@@ -20,6 +20,7 @@
  *    drives the pose; see leadTarget.js.
  */
 import {createBottleScene} from './bottleScene'
+import {sampleCamera} from './cameraLight'
 import {createLeadTarget} from './leadTarget'
 import {trackingStore, TrackingState} from './trackingStore'
 
@@ -97,8 +98,9 @@ export const createImageTargetPipelineModule = (targetNames) => {
     },
 
     // Runs every frame, after the engine has updated the camera pose.
-    onUpdate: () => {
+    onUpdate: ({processGpuResult}) => {
       const now = performance.now()
+      sampleCamera(processGpuResult?.camerapixelarray, now)
       bottleScene?.update(now)
 
       frameCount++

@@ -51,7 +51,7 @@ const makeDotTexture = () => {
 }
 
 /** One card: a canvas sized to its full text, redrawn as the text types in. */
-const makeCard = (text) => {
+export const makeCard = (text) => {
   const c = document.createElement('canvas')
   const ctx = c.getContext('2d')
   ctx.font = FONT

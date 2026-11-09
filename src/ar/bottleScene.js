@@ -99,8 +99,9 @@ export const createBottleScene = ({onSelect} = {}) => {
   const addToScene = (scene, xrCamera, xrCanvas) => {
     camera = xrCamera
     canvas = xrCanvas
-    // Materials are unlit; ambient is a gentle fill in case lit materials are added.
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0))
+    // Only Planted's models are lit (and they bring their own key + sky light); a full-
+    // strength ambient on top flattened them, so this is just a fill.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35))
     scene.add(anchor)
     // pointerup (not pointerdown) so a drag gesture does not select.
     canvas.addEventListener('pointerup', e => handleTap(e.clientX, e.clientY))

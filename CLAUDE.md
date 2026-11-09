@@ -37,16 +37,24 @@ src/ar/               engine + three.js. NO React imports in this folder.
   tickerRings.js        Typography style "Ticker": tilted text bands round the bottle, scrolling opposite ways; unfold in / fold out
   callouts.js           Typography style "Callouts": dot -> leader line -> card, text typed in; screen-left/right of the bottle, shrink to fit; exits in reverse
   liveColor.js          applies a config colour only when it changed (live tuning without per-frame parsing)
+  planted.js            Elements style "Planted": bottle planted in a soil collar (360°), ginseng roots surface + lie on it, grape berries drop/bounce/roll; light matched from the camera (cameraLight.js), crumbling soil edge, contact shadows, grain
+  spotlight.js          Effects style "Spotlight": room dims except the bottle (far-plane dark layer the occluder punches through), lamp strikes, beam + dust + table pool
+  energy.js             Effects style "Energy": arcs on the bottle's visible edges (ribbons on PRODUCT.profile, rebuilt in place), charge climbs, surges send shockwave rings
+  scan.js               Effects style "Scan": scan line climbs/descends revealing a hologram grid (lathed profile), laser sheet, nutrient readouts type out, "Formula scanned" verdict
+  sparkle.js            Effects style "Sparkle": cap flash, brand-colour stars burst + swirl + settle into orbit (all motion in the shader); exit rewinds time
+  cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 16 px), for lit effects
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       nutrient values, transcribed from the label artwork
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
 src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
+src/fullscreen.js     double-tap the camera view = toggle full screen (Android; iPhone Safari has no API)
 src/sound.js          UI sounds (Web Audio, unlocked on the Start tap) + haptics
 src/components/ar/    2D UI: StartScreen, AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
 public/brand/         start-screen hero photo (EXPERIENCE.heroImage)
 public/sounds/        lock.mp3, select.mp3, snap.mp3 (Envato Elements, trimmed + peak-normalised mono MP3); volumes in SOUND (config.js)
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
+public/models/        GLB models (simplify + meshopt with `npx @gltf-transform/cli`; keep each < ~300 KB)
 public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)
 public/image-targets/ generated targets: JSON + luminance PNG only (the engine fetches just imagePath)
 brand-assets/         brand reference: README (product facts + shape), label/ + reference/ (committed), photos/ (local)

@@ -27,7 +27,11 @@ const RANGE = {
   finalPulseSpeed: [0, 3, 0.05], orbitSpeed: [0, 3, 0.05],
   stagger: [0, 2000, 50], typeSpeed: [10, 150, 5], cursorLinger: [0, 3000, 100],
   cardHeight: [0.1, 0.5, 0.01], reach: [1.05, 2.5, 0.01], lineThickness: [0.003, 0.04, 0.001],
-  dotSize: [0.05, 0.4, 0.01], minFit: [0.3, 1, 0.05], tiltDeg: [-30, 30, 0.5], bandHeight: [0.06, 0.4, 0.01], backOpacity: [0, 1, 0.05], followMs: [0, 1500, 50], side: [-1, 1, 2], y: [-0.9, 0.9, 0.01],
+  dotSize: [0.05, 0.4, 0.01], minFit: [0.3, 1, 0.05], soilSize: [1, 3.5, 0.05], soilHeight: [0.05, 0.5, 0.01], soilEdge: [0.5, 1.1, 0.01], contact: [0, 1, 0.05], saturation: [0, 1.5, 0.05], grain: [0, 0.15, 0.005], berrySize: [0.1, 0.4, 0.01], drop: [0.3, 3, 0.1], roll: [0, 0.3, 0.01], light: [0, 3, 0.05], shadow: [0, 1, 0.05], gap: [0, 1.5, 0.05], swayDeg: [0, 90, 1], tiltDeg: [-30, 30, 0.5], bandHeight: [0.06, 0.4, 0.01], backOpacity: [0, 1, 0.05], followMs: [0, 1500, 50], side: [-1, 1, 2], y: [-0.9, 0.9, 0.01],
+  dim: [0, 1, 0.01], beam: [0, 1, 0.01], beamWidth: [0.8, 3, 0.05], beamHeight: [1.5, 6, 0.1], pool: [0, 1, 0.01], dust: [0, 1.5, 0.05], dustSize: [0.005, 0.08, 0.001],
+  hologram: [0, 1, 0.01], gridSpacing: [0.02, 0.2, 0.005], line: [0, 2, 0.05], sheet: [0, 1.5, 0.05], sweepEvery: [1.5, 15, 0.5],
+  starSize: [0.02, 0.2, 0.005], spread: [1.2, 3, 0.05], spin: [0, 2, 0.05],
+  intensity: [0, 2, 0.05], boltWidth: [0.01, 0.12, 0.005], surgeEvery: [0.8, 8, 0.1], ringReach: [1.5, 7, 0.1],
   volume: [0, 1, 0.05], lock: [0, 1, 0.05], select: [0, 1, 0.05], snap: [0, 1, 0.05],
 }
 const OPTIONS = {direction: [['← Left', -1], ['Right →', 1]]}

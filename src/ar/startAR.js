@@ -10,6 +10,7 @@
 import * as THREE from 'three'
 
 import {TRACKING} from '../config'
+import {CAMERA_SAMPLE_PX} from './cameraLight'
 import {createImageTargetPipelineModule} from './imageTargetPipelineModule'
 import {trackingStore} from './trackingStore'
 
@@ -183,6 +184,8 @@ export const startAR = async (canvas) => {
       XR8.Threejs.pipelineModule(),            // Creates the three.js scene.
       XR8.XrController.pipelineModule(),       // Drives tracking + image targets.
       XR8.CanvasScreenshot.pipelineModule(),   // Photo capture: camera + 3D in one frame.
+      // A 16 px copy of each camera frame: the room's light for lit effects (cameraLight.js).
+      XR8.CameraPixelArray.pipelineModule({maxDimension: CAMERA_SAMPLE_PX}),
       ...(landingPage ? [landingPage.pipelineModule()] : []),  // Unsupported-browser handling.
       ...(extras
         ? [

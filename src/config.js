@@ -48,7 +48,7 @@ const BOTTLE_MM = {
   circumference: 176, // around the label — confirmed on the real bottle
   labelWidth: 172, // printed label length (artwork KLD: 172 x 52)
   labelHeight: 52, // printed label height (artwork)
-  labelBottom: 12, // table -> bottom edge of the label. ESTIMATE, measure it
+  labelBottom: 12, // table -> bottom edge of the label. Measured on the real bottle
 
   // [height above the table, radius] in mm, base -> cap top.
   // The body is ONE straight cylinder, same 176mm circumference above, on and below
@@ -68,7 +68,7 @@ const BOTTLE_MM = {
     [80.4, 17.6],
     [81.2, 19.6], // cap lip — cap ~39mm across
     [92.1, 19.6],
-    [93.6, 18.5], // cap top, rounded edge. Total height ~94mm — measure it
+    [93.6, 18.5], // cap top, rounded edge. Total height ~94mm (measured)
   ],
 };
 
@@ -155,8 +155,13 @@ export const AnimationId = {
   TYPOGRAPHY: "typography",
   CALLOUTS: "callouts",
   TICKER: "tickerRings",
+  PLANTED: "planted",
   NUTRIENT_ORBIT: "nutrientOrbit",
   SETTLE: "settle",
+  SPOTLIGHT: "spotlight",
+  ENERGY: "energy",
+  SCAN: "scan",
+  SPARKLE: "sparkle",
 };
 
 /**
@@ -333,6 +338,34 @@ export const ANIMATIONS = {
     orbitSpeed: 1, // x each ring's base speed
   },
 
+  /**
+   * The bottle planted in a patch of earth with the label's botanicals, in 360°: soil
+   * swells round its foot, ginseng roots surface and lie on it, grape berries drop
+   * and bounce onto it. Real textured models, lit + shadowed. See planted.js.
+   */
+  [AnimationId.PLANTED]: {
+    enabled: true,
+    active: false,
+    group: "elements",
+    label: "Planted",
+    delay: 0,
+
+    soilSize: 1.75, // mound width, x label height (bottle is ~1.1 wide)
+    soilHeight: 0.25, // mound height, x label height: the collar at the bottle is ~0.17 (label at 0.23)
+    soilEdge: 0.9, // where the torn edge runs, share of the mound's radius
+    contact: 0.6, // how dark the soil gets where it meets the bottle, 0..1
+    berrySize: 0.16, // one grape, x label height
+    drop: 1.4, // berries fall from this high, x label height
+    roll: 0.07, // and roll this far down-slope after landing, x label height
+    light: 1, // strength of the light matched from the camera
+    saturation: 0.85, // 1 = the models' own colours; lower sits better in a camera image
+    grain: 0.035, // moving noise like the camera's, 0..0.15
+    shadow: 0.5, // contact shadows, 0..1
+    cardHeight: 0.11, // captions, x label height
+    cardColor: "rgba(6, 52, 50, 0.82)",
+    cardBorderColor: "rgba(255, 212, 90, 0.55)",
+  },
+
   /** Warm golden energy gathers, peaks, then settles into a calm aura. */
   [AnimationId.SETTLE]: {
     enabled: true,
@@ -360,6 +393,90 @@ export const ANIMATIONS = {
     // Resting state
     finalAuraOpacity: 0.75, // resting brightness, x the entrance peak
     finalPulseSpeed: 0.55, // rad/s of the resting breath
+  },
+
+  /**
+   * The room dims except the bottle; a stage lamp strikes above it, dust drifts in the
+   * beam, light pools on the table. Product-agnostic. See spotlight.js.
+   */
+  [AnimationId.SPOTLIGHT]: {
+    enabled: true,
+    active: false,
+    group: "glow",
+    label: "Spotlight",
+    delay: 0,
+
+    dim: 0.72, // how dark the room goes, 0..1 (the bottle itself never dims)
+    dimColor: "#05070B",
+    color: "#FFF0D2", // the lamp's light
+    beam: 0.32, // beam brightness
+    beamWidth: 1.7, // beam radius at the table, x bottle radius
+    beamHeight: 3.2, // lamp height above the table, x label height (above the frame)
+    pool: 0.42, // light pool on the table
+    dust: 0.85, // dust in the beam, 0..1
+    dustSize: 0.03, // one mote, x label height
+  },
+
+  /**
+   * Electric arcs crawl the bottle's edges as a charge climbs it; every few seconds a
+   * surge flares them and sends a shockwave across the table. Product-agnostic. See energy.js.
+   */
+  [AnimationId.ENERGY]: {
+    enabled: true,
+    active: false,
+    group: "glow",
+    label: "Energy",
+    delay: 0,
+
+    color: "#2FA8FF", // arcs + shockwaves; the arcs' cores burn white
+    intensity: 1, // arcs + rings, 0..2
+    boltWidth: 0.085, // arc glow width, x label height
+    glow: 0.35, // charge glow on the table
+    surgeEvery: 2.6, // seconds between surges
+    ringReach: 4, // shockwave reach, x bottle radius
+  },
+
+  /**
+   * The formula being analysed: a scan line climbs the bottle revealing a hologram grid,
+   * the label's nutrients type out beside it, it sweeps back down, then
+   * "Formula scanned · N nutrients". Product-agnostic (readouts from nutrientData.js). See scan.js.
+   */
+  [AnimationId.SCAN]: {
+    enabled: true,
+    active: false,
+    group: "glow",
+    label: "Scan",
+    delay: 0,
+
+    color: "#38E8FF",
+    hologram: 0.55, // grid + rim strength, 0..1
+    gridSpacing: 0.07, // between grid rings, x label height
+    line: 1, // scan line brightness
+    sheet: 0.8, // the laser sheet cutting out at the line
+    sweepEvery: 5, // s between idle sweeps
+    cardHeight: 0.085, // readouts, x label height (the verdict is 1.25x)
+    cardColor: "rgba(4, 30, 40, 0.85)",
+    cardBorderColor: "rgba(56, 232, 255, 0.6)",
+  },
+
+  /**
+   * A flash at the cap, then stars in the brand's colours fountain out, swirl down round
+   * the bottle and settle into a twinkling orbit. Product-agnostic. See sparkle.js.
+   */
+  [AnimationId.SPARKLE]: {
+    enabled: true,
+    active: false,
+    group: "glow",
+    label: "Sparkle",
+    delay: 0,
+
+    color1: "#FFD45A", // brand gold (also the flash)
+    color2: "#FFFFFF",
+    color3: "#3FD9C4", // brand teal
+    starSize: 0.07, // x label height
+    spread: 1.9, // outermost orbit, x bottle radius
+    spin: 0.35, // idle orbit speed, rad/s
+    opacity: 1,
   },
 };
 

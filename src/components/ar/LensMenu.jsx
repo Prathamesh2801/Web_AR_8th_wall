@@ -77,6 +77,7 @@ export const LensMenu = ({groups, effectId, onPick, onShutter, dimmed}) => {
 
   return (
     <div
+      data-no-fullscreen // quick taps while picking an effect must not toggle full screen
       className={`pointer-events-auto absolute inset-x-0 bottom-0 z-30 transition-opacity duration-300 ${dimmed ? 'opacity-40' : ''}`}
       style={{paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)'}}
     >
