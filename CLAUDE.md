@@ -8,6 +8,7 @@ open-source 8th Wall engine (2026). No backend, no account, no API keys, **no `.
 
 ```bash
 npm run dev               # HTTPS dev server on the LAN (camera needs HTTPS) â€” open the Network URL on a phone
+npm run tunnel -- <url>   # HTTP dev server behind a VS Code forwarded port (real HTTPS, no cert warning) + QR in the terminal; URL remembered in .tunnel-url.local
 npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
