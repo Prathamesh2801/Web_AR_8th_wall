@@ -184,6 +184,9 @@ export const createBottleScene = ({onSelect} = {}) => {
         a.instance.root.visible = false
       }
     }
+    // The lock cue (outline) steps back while any other effect plays.
+    const solo = active().length === 1
+    for (const a of active()) a.instance.setSolo?.(solo)
   }
 
   /** Restarts the given (default: every active) animations together, each after its delay. */

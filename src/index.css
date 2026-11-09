@@ -74,6 +74,18 @@ body {
   z-index: 10;
 }
 
+/* Scan line sweeping the start screen's product photo. */
+@keyframes heroScan {
+  0%, 100% { transform: translateY(0); opacity: 0.25; }
+  50% { transform: translateY(calc(27vh - 3rem)); opacity: 1; }
+}
+
+/* Camera flash on capture: instant white, fades out. */
+@keyframes snapFlash {
+  from { opacity: 0.9; }
+  to { opacity: 0; }
+}
+
 /* Entrance for the nutrient information card. */
 @keyframes fadeUp {
   from {
@@ -146,12 +158,9 @@ body {
 #requestingCameraPermissions {
   /*
    * Centred with auto margins inside left/right insets rather than
-   * `left: 50% + translateX(-50%)`. The transform approach cannot work here: the
-   * entrance animation below also animates `transform`, and an animation's value
-   * beats a normal declaration, so the centring offset was being discarded for the
-   * whole animation and never reinstated — leaving the card pinned with its left
-   * edge at the screen midpoint. Margin centring is independent of `transform`,
-   * so the two can no longer fight.
+   * `left: 50% + translateX(-50%)`: the entrance animation also animates `transform`,
+   * and an animation's value beats a normal declaration, so a transform-based centring
+   * offset was discarded — leaving the card pinned at the screen midpoint.
    */
   top: auto !important;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 2.25rem) !important;
@@ -162,20 +171,42 @@ body {
   margin-left: auto !important;
   margin-right: auto !important;
   box-sizing: border-box;
-  padding: 1rem 1.25rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  /* Backdrop blur keeps it legible once the camera feed appears behind it. */
+  padding: 1.25rem 1.25rem 1.1rem !important;
+  border: 1px solid rgba(255, 212, 90, 0.25);
+  border-radius: 1.25rem;
+  background-color: rgba(10, 10, 10, 0.75) !important;
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  font-size: 0.9375rem !important;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+  text-align: center;
   color: rgba(255, 255, 255, 0.92) !important;
-  /* Opacity-only entrance, so nothing competes with layout. */
+  /*
+   * XRExtras' markup says "Tap 'Allow' to access AR" (text node, no wrapper). Its
+   * text is hidden with font-size 0 and replaced by the two lines below, which say
+   * WHY the camera is needed and that nothing leaves the phone — the moment people
+   * decide whether to trust the prompt.
+   */
+  font-size: 0 !important;
+  line-height: 0;
   animation: xr-fade-in 0.35s ease-out both;
+}
+
+#requestingCameraPermissions::before {
+  content: "Tap “Allow” to use your camera";
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #fff;
+}
+
+#requestingCameraPermissions::after {
+  content: "It’s used to find your bottle and show the 3D effects. Nothing is recorded or uploaded.";
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 @keyframes xr-fade-in {

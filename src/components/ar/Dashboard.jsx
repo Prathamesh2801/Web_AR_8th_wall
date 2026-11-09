@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
 
-import {ANIMATIONS} from '../../config'
+import {ANIMATIONS, SOUND} from '../../config'
+import {playSound} from '../../sound'
 import {trackingStore} from '../../ar/trackingStore'
 import {resetTuning, saveTuning, tuningJSON} from '../../tuning'
 
@@ -20,10 +21,11 @@ const RANGE = {
   letterHeight: [0.08, 0.4, 0.01], radius: [1.05, 2.5, 0.01], height: [-0.6, 1.2, 0.01],
   glow: [0, 1, 0.01], slantDeg: [-20, 20, 0.5], printAzimuthDeg: [-30, 30, 0.5],
   loopPause: [0, 10, 0.1], thickness: [0.005, 0.06, 0.001], opacity: [0, 1, 0.01],
-  drawDuration: [200, 3000, 50], pulseSpeed: [0, 5, 0.1], entranceDuration: [500, 5000, 100],
+  drawDuration: [200, 3000, 50], holdDuration: [0, 3000, 50], fadeDuration: [100, 3000, 50], idleOpacity: [0, 1, 0.01], pulseSpeed: [0, 5, 0.1], entranceDuration: [500, 5000, 100],
   glowReach: [0.2, 1.5, 0.05], glowFalloff: [0.02, 0.4, 0.01], particleCount: [0, 300, 10],
   particleSpread: [1.05, 2, 0.01], finalAuraOpacity: [0, 1.5, 0.01],
   finalPulseSpeed: [0, 3, 0.05], orbitSpeed: [0, 3, 0.05],
+  volume: [0, 1, 0.05], lock: [0, 1, 0.05], select: [0, 1, 0.05], snap: [0, 1, 0.05],
 }
 const OPTIONS = {direction: [['← Left', -1], ['Right →', 1]]}
 /** Read once when the effect is built: these need a page reload. */
@@ -200,6 +202,16 @@ export const Dashboard = ({tracking, animations, activeIds, onToggleAnimation, s
                 ))}
               </div>
             </div>
+
+            <fieldset className="space-y-3 rounded-xl border border-white/10 p-3">
+              <legend className="px-1 text-[11px] tracking-[0.2em] text-gold/80">SOUND</legend>
+              <Knobs obj={SOUND} onEdit={edit} />
+              <div className="grid grid-cols-3 gap-1">
+                {['lock', 'select', 'snap'].map(n => (
+                  <button key={n} type="button" className={pill(false)} onClick={() => playSound(n)}>▶ {n}</button>
+                ))}
+              </div>
+            </fieldset>
 
             <div className="grid grid-cols-2 gap-2">
               <button type="button" className={pill(copied)} onClick={copy}>{copied ? 'Copied' : 'Copy settings'}</button>

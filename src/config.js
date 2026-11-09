@@ -44,20 +44,20 @@
  */
 const BOTTLE_MM = {
   circumference: 176, // around the label — confirmed on the real bottle
-  labelWidth: 172,    // printed label length (artwork KLD: 172 x 52)
-  labelHeight: 52,    // printed label height (artwork)
-  labelBottom: 12,    // table -> bottom edge of the label. ESTIMATE, measure it
+  labelWidth: 172, // printed label length (artwork KLD: 172 x 52)
+  labelHeight: 52, // printed label height (artwork)
+  labelBottom: 12, // table -> bottom edge of the label. ESTIMATE, measure it
 
   // [height above the table, radius] in mm, base -> cap top.
   // The body is ONE straight cylinder, same 176mm circumference above, on and below
   // the label (confirmed; brand-assets/reference/ref-6.jpeg). Only the last ~4mm at
   // the table curve in — the rounded bottom edge.
   profile: [
-    [0.8, 26],      // base contact (rounded foot)
+    [0.8, 26], // base contact (rounded foot)
     [0.8, 26],
     [2, 27.5],
-    [4, 28],      // full body width
-    [64, 28],     // label top (labelBottom + labelHeight); shoulder turns in from here
+    [4, 28], // full body width
+    [64, 28], // label top (labelBottom + labelHeight); shoulder turns in from here
     [67.6, 27.2],
     [71.3, 25.8],
     [74.9, 23.8],
@@ -68,7 +68,7 @@ const BOTTLE_MM = {
     [92.1, 19.6],
     [93.6, 18.5], // cap top, rounded edge. Total height ~94mm — measure it
   ],
-}
+};
 
 /**
  * The same profile in the units the engine reports: y in label heights from the
@@ -77,24 +77,50 @@ const BOTTLE_MM = {
 const profile = BOTTLE_MM.profile.map(([h, r]) => [
   (h - BOTTLE_MM.labelBottom) / BOTTLE_MM.labelHeight - 0.5,
   r / (BOTTLE_MM.circumference / (2 * Math.PI)),
-])
+]);
 
 export const PRODUCT = {
   mm: BOTTLE_MM,
   profile,
   /** Bottle radius (label radii) at height y (label heights), clamped to base..cap. */
   radiusAt: (y) => {
-    if (y <= profile[0][0]) return profile[0][1]
+    if (y <= profile[0][0]) return profile[0][1];
     for (let i = 1; i < profile.length; i++) {
-      const [y1, r1] = profile[i]
+      const [y1, r1] = profile[i];
       if (y <= y1) {
-        const [y0, r0] = profile[i - 1]
-        return r0 + (r1 - r0) * ((y - y0) / (y1 - y0 || 1))
+        const [y0, r0] = profile[i - 1];
+        return r0 + (r1 - r0) * ((y - y0) / (y1 - y0 || 1));
       }
     }
-    return profile[profile.length - 1][1]
+    return profile[profile.length - 1][1];
   },
-}
+};
+
+/**
+ * The client + product this build is for: everything the 2D UI says about the product.
+ * A new client's product = new targets + PRODUCT model + this block (+ its hero image).
+ */
+export const EXPERIENCE = {
+  brand: "Supradyn",
+  product: "Naturals Ginseng",
+  maker: "Bayer",
+  headline: "Bring your product to life.",
+  intro: "Point your camera at your Supradyn Naturals Ginseng bottle and watch it come alive in 3D. Then snap a photo and share it.",
+  lookFor: "your Supradyn bottle", // "Point at ___"
+  heroImage: "/brand/hero.jpg", // product photo on the start screen (public/)
+  photoName: "supradyn-ar.jpg", // file name of saved photos
+};
+
+/**
+ * UI sound volumes, 0..1 (public/sounds/<name>.mp3). Played level = volume x the
+ * sound's own level. Tunable live in the dashboard (Sync tab).
+ */
+export const SOUND = {
+  volume: 0.8, // master; 0 = silent
+  lock: 0.9, // bottle detected
+  select: 0.45, // effect picked (plays often: keep it low)
+  snap: 0.8, // photo taken
+};
 
 /** Image-target tracking. */
 export const TRACKING = {
@@ -105,7 +131,7 @@ export const TRACKING = {
    * the first one found drives the pose (src/ar/leadTarget.js). A missing file is
    * skipped with a console warning.
    */
-  targets: ['supradyn-bottle', 'supradyn-bottle-left', 'supradyn-bottle-right'],
+  targets: ["supradyn-bottle", "supradyn-bottle-left", "supradyn-bottle-right"],
 
   /**
    * Pose smoothing time constant, ms. Higher = steadier but the content lags behind
@@ -119,42 +145,58 @@ export const TRACKING = {
    * edge from restarting the whole show.
    */
   replayAfterMs: 1500,
-}
+};
 
 /** Stable ids, so debug output, UI and config keys cannot drift apart. */
 export const AnimationId = {
-  PRODUCT_OUTLINE: 'productOutline',
-  TYPOGRAPHY: 'typography',
-  NUTRIENT_ORBIT: 'nutrientOrbit',
-  SETTLE: 'settle',
-}
+  PRODUCT_OUTLINE: "productOutline",
+  TYPOGRAPHY: "typography",
+  NUTRIENT_ORBIT: "nutrientOrbit",
+  SETTLE: "settle",
+};
 
 /**
- * Every animation the app knows about, in chip order.
- *   enabled  false = removed entirely (not built, no chip)
- *   active   true  = plays the moment the bottle is detected; false = off until its
- *                    chip is tapped
+ * Effect groups of the lens menu, in carousel order. Each animation with a `group` is one
+ * style (variant) of that group; the user plays ONE effect at a time. Adding a style =
+ * a new ANIMATIONS entry with the same `group` — it appears in the tray automatically.
+ */
+export const GROUPS = [
+  {id: "type", label: "Typography"},
+  {id: "elements", label: "Elements"},
+  {id: "glow", label: "Effects"},
+];
+
+/**
+ * Every animation the app knows about.
+ *   enabled  false = removed entirely (not built, not in the menu)
+ *   active   true  = plays the moment the bottle is detected. Only the outline (no
+ *                    `group`: it is the lock confirmation, not a menu choice).
+ *   group    which lens-menu group it is a style of; `label` is the style's name
  */
 export const ANIMATIONS = {
   /**
-   * Traces the whole product's silhouette on detection — the check that detection
-   * and tracking are right: the lines should hug the real bottle's edges.
+   * The lock cue: traces the product's silhouette on detection, then fades to a faint
+   * line (or away, while an effect plays). Also the tracking check: the trace should
+   * hug the real bottle's edges.
    */
   [AnimationId.PRODUCT_OUTLINE]: {
     enabled: true,
     active: true,
-    label: 'Outline',
-    delay: 0,                  // s after sync start
+    label: "Outline",
+    delay: 0, // s after sync start
 
-    color: '#FFD45A',          // silhouette lines (shape = PRODUCT.profile)
-    labelBandColor: '#7FE3D3', // rings at the tracked label's top/bottom edges
-    showLabelBand: true,       // show where the engine's 52mm tracked band is
-    thickness: 0.022,          // line thickness, x bottle radius (~0.6mm)
+    color: "#FFD45A", // silhouette lines (shape = PRODUCT.profile)
+    labelBandColor: "#7FE3D3", // rings at the tracked label's top/bottom edges
+    showLabelBand: false, // calibration aid: the engine's 52mm tracked band
+    thickness: 0.022, // line thickness, x bottle radius (~0.6mm)
     opacity: 0.95,
-    drawDuration: 900,         // ms to trace base -> cap
-    pulseSpeed: 1.6,           // rad/s of the resting breath
+    drawDuration: 900, // ms to trace base -> cap
+    holdDuration: 400, // ms fully lit after the trace
+    fadeDuration: 700, // ms to fade to rest (a glint runs up the edge meanwhile)
+    idleOpacity: 0.15, // resting level when no effect plays (0 = gone); hidden while one does
+    pulseSpeed: 1.6, // rad/s of the resting breath
 
-    showBase: true,            // false = stop at the label's bottom edge
+    showBase: true, // false = stop at the label's bottom edge
   },
 
   /**
@@ -165,10 +207,11 @@ export const ANIMATIONS = {
   [AnimationId.TYPOGRAPHY]: {
     enabled: true,
     active: false,
-    label: 'Type',
-    delay: 0,                // s after sync start (dashboard: Replay all)
+    group: "type",
+    label: "Lift & Spin",
+    delay: 0, // s after sync start (dashboard: Replay all)
 
-    shimmerColor: '#FFF1A8', // the recognise / farewell sweep
+    shimmerColor: "#FFF1A8", // the recognise / farewell sweep
 
     // Calibration: each flat word must start exactly on its print. If they sit beside
     // it on the phone, rotate them round the bottle here (+ = to the right).
@@ -177,31 +220,31 @@ export const ANIMATIONS = {
     words: {
       supradyn: {
         show: true,
-        faceColor: '#231F20',  // the logo's printed ink (sampled from the label)
-        sideColor: '#3D3638',  // same ink, a shade lighter so the depth reads
-        glowColor: '#FFC84A',
-        glow: 0.18,            // gold glow behind the letters, 0..1
-        slantDeg: 12,          // the logo's italic
-        letterHeight: 0.22,    // lifted letters, x label height
-        radius: 1.45,          // orbit radius, x bottle radius
-        height: 0.45,          // orbit height, x label height from its centre (print +0.26)
-        direction: -1,         // 1 = front moves right, -1 = left
-        speed: 0.1,            // rev/s
-        rounds: 2,             // whole turns before it lands back on its print
-        delay: 0.3,            // s after the animation starts
-        loop: false,           // replay after exiting
-        loopPause: 1.5,        // s between loops
+        faceColor: "#1F3A8A", // logo navy (lifted a touch: the matcap darkens it, deeper reads black)
+        sideColor: "#3355AA", // same navy, lighter so the depth reads
+        glowColor: "#FFC84A",
+        glow: 0.18, // gold glow behind the letters, 0..1
+        slantDeg: 12, // the logo's italic
+        letterHeight: 0.22, // lifted letters, x label height
+        radius: 1.45, // orbit radius, x bottle radius
+        height: 0.45, // orbit height, x label height from its centre (print +0.26)
+        direction: -1, // 1 = front moves right, -1 = left
+        speed: 0.1, // rev/s
+        rounds: 2, // whole turns before it lands back on its print
+        delay: 0.3, // s after the animation starts
+        loop: false, // replay after exiting
+        loopPause: 1.5, // s between loops
       },
       ginseng: {
         show: true,
-        faceColor: '#E2483B',  // label red
-        sideColor: '#D9A23A',
-        glowColor: '#FFC84A',
+        faceColor: "#E2483B", // label red
+        sideColor: "#D9A23A",
+        glowColor: "#FFC84A",
         glow: 0.2,
         slantDeg: 0,
         letterHeight: 0.2,
         radius: 1.3,
-        height: 0,             // print is at -0.25
+        height: 0, // print is at -0.25
         direction: 1,
         speed: 0.1,
         rounds: 2,
@@ -216,28 +259,30 @@ export const ANIMATIONS = {
   [AnimationId.NUTRIENT_ORBIT]: {
     enabled: true,
     active: false,
-    label: 'Nutrients',
+    group: "elements",
+    label: "Orbit",
     delay: 0,
-    orbitSpeed: 1,  // x each ring's base speed
+    orbitSpeed: 1, // x each ring's base speed
   },
 
   /** Warm golden energy gathers, peaks, then settles into a calm aura. */
   [AnimationId.SETTLE]: {
     enabled: true,
     active: false,
-    label: 'Glow',
+    group: "glow",
+    label: "Golden",
     delay: 0,
 
     // Palette
-    highlightColor: '#FFF1A8', // hot light right at the bottle's edge
-    deepColor: '#D99A22', // warm gold it fades to further out
-    emberColor: '#FFF8D6', // very soft warm white sparks
+    highlightColor: "#FFF1A8", // hot light right at the bottle's edge
+    deepColor: "#D99A22", // warm gold it fades to further out
+    emberColor: "#FFF8D6", // very soft warm white sparks
 
     // Timing
     entranceDuration: 2400, // ms: light rises base -> cap, blooms (peak ~60%), settles
 
     // Halo, measured from the bottle's real silhouette (PRODUCT.profile)
-    glowReach: 0.9,    // how far the light can extend, x bottle radius
+    glowReach: 0.9, // how far the light can extend, x bottle radius
     glowFalloff: 0.12, // resting softness: light halves every ~0.7x this, x bottle radius
 
     // Embers
@@ -248,7 +293,7 @@ export const ANIMATIONS = {
     finalAuraOpacity: 0.75, // resting brightness, x the entrance peak
     finalPulseSpeed: 0.55, // rad/s of the resting breath
   },
-}
+};
 
 /**
  * The invisible depth cylinder that hides content passing behind the bottle. Not an
@@ -256,7 +301,7 @@ export const ANIMATIONS = {
  */
 export const OCCLUSION = {
   enabled: true,
-}
+};
 
 /**
  * Dashboard (TUNE button). Hidden from normal users; open the app with `?debug`
@@ -266,11 +311,11 @@ export const DEBUG = {
   panelOpenOnLoad: false,
   /** Starting animation-speed multiplier; the debug panel changes it live. */
   speed: 1,
-}
+};
 
 /** Ids of every enabled animation, in declaration order. */
 export const enabledAnimationIds = () =>
-  Object.keys(ANIMATIONS).filter((id) => ANIMATIONS[id].enabled)
+  Object.keys(ANIMATIONS).filter((id) => ANIMATIONS[id].enabled);
 
 /** Config for one animation, or an empty object so callers can destructure safely. */
-export const animationConfig = (id) => ANIMATIONS[id] ?? {}
+export const animationConfig = (id) => ANIMATIONS[id] ?? {};

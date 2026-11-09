@@ -129,6 +129,13 @@ export const checkSupport = () => {
   return {ok: true}
 }
 
+/**
+ * Captures the current frame (camera feed + AR content) as a JPEG data URL. The engine
+ * grabs it at the end of a render, so it works without preserveDrawingBuffer.
+ */
+export const takePhoto = async () =>
+  `data:image/jpeg;base64,${await window.XR8.CanvasScreenshot.takeScreenshot()}`
+
 export const startAR = async (canvas) => {
   if (started) return
   started = true
@@ -175,6 +182,7 @@ export const startAR = async (canvas) => {
       XR8.GlTextureRenderer.pipelineModule(),  // Draws the camera feed.
       XR8.Threejs.pipelineModule(),            // Creates the three.js scene.
       XR8.XrController.pipelineModule(),       // Drives tracking + image targets.
+      XR8.CanvasScreenshot.pipelineModule(),   // Photo capture: camera + 3D in one frame.
       ...(landingPage ? [landingPage.pipelineModule()] : []),  // Unsupported-browser handling.
       ...(extras
         ? [

@@ -39,12 +39,28 @@ src/ar/               engine + three.js. NO React imports in this folder.
   nutrientData.js       nutrient values, transcribed from the label artwork
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
 src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
-src/components/ar/    2D UI: StartScreen, AROverlay, NutrientCard, Dashboard, ErrorFallback
+src/sound.js          UI sounds (Web Audio, unlocked on the Start tap) + haptics
+src/components/ar/    2D UI: StartScreen, AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
+public/brand/         start-screen hero photo (EXPERIENCE.heroImage)
+public/sounds/        lock.mp3, select.mp3, snap.mp3 (Envato Elements, trimmed + peak-normalised mono MP3); volumes in SOUND (config.js)
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
 public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)
 public/image-targets/ generated targets: JSON + luminance PNG only (the engine fetches just imagePath)
 brand-assets/         brand reference: README (product facts + shape), label/ + reference/ (committed), photos/ (local)
 ```
+
+## Lens menu (Penpot page "02 · Lens Menu")
+
+Snapchat-style: after the first lock (lock sound) the menu appears with nothing selected.
+Groups (Type / Elements / Glow) sit in a carousel; the selected one is inside the shutter
+ring and is the ONE effect playing. Tapping the ring = photo (`XR8.CanvasScreenshot`,
+camera + 3D) -> flash + snap sound -> PhotoPreview (Save / Share). Losing the bottle dims
+the menu and keeps the choice. The outline (no `group`, `active: true`) is the lock cue.
+The carousel is a native CSS scroll-snap scroller (platform momentum); the pick commits
+when scrolling settles. Slot 0 = no effect.
+
+All product copy (start screen, hints, photo file name) comes from `EXPERIENCE` in
+config.js: a new client's product = new targets + `BOTTLE_MM` model + `EXPERIENCE` + hero.
 
 ## Data flow
 
@@ -57,9 +73,10 @@ brand-assets/         brand reference: README (product facts + shape), label/ + 
 
 1. `src/ar/<name>.js`: factory `(config) => ({root, build(geometry), update(timeMs, camera), ...optional})`.
    Full contract is at the top of `src/config.js`.
-2. Add an `AnimationId` + `ANIMATIONS` entry (`enabled`, `active`, `label`, `delay`, your knobs).
+2. Add an `AnimationId` + `ANIMATIONS` entry (`enabled`, `active`, `group`, `label`, `delay`,
+   your knobs). `group` (one of `GROUPS`) makes it a style in the lens menu; `label` is its name.
    Read knobs from config every frame and they become live dashboard controls for free.
-3. Register in `src/ar/animations/index.js`. It shows up as a chip; `bottleScene` is untouched.
+3. Register in `src/ar/animations/index.js`. It shows up in the lens menu; `bottleScene` is untouched.
 
 Rules every animation must follow (each one was a real bug here):
 - Size everything from `geometry` (radius/height in engine units). Never hardcode bottle size.

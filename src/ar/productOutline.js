@@ -1,10 +1,12 @@
 /**
- * productOutline.js — animation: traces the whole product's silhouette (base, body,
- * shoulder, neck, cap) the moment the bottle is detected, then holds it there.
+ * productOutline.js — the lock cue: traces the whole product's silhouette (base, body,
+ * shoulder, neck, cap) the moment the bottle is detected, then gets out of the way.
  *
- * Its job is verification as much as looks: if the outline sits on the real bottle's
- * edges while you move it, detection, pose and scale are right. The label-band rings
- * mark exactly the 52mm region the engine tracks.
+ * Timeline: trace (drawDuration) -> hold -> fade while a glint runs up the edge -> rest.
+ * At rest it is invisible while a lens-menu effect plays (`setSolo(false)`), and a faint
+ * breathing line (`idleOpacity`) when it is alone, so the user still sees the lock.
+ * The label-band rings (`showLabelBand`) mark the 52mm region the engine tracks — a
+ * calibration aid, off by default.
  *
  * HOW
  * The bottle is a surface of revolution, so its silhouette from any side is its
@@ -26,6 +28,8 @@ import {PRODUCT} from '../config'
 import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 
+const GLINT_COLOR = '#FFF8E0'
+const GLINT_LENGTH = 0.18 // of the edge
 const easeOut = t => 1 - Math.pow(1 - t, 3)
 const clamp01 = t => Math.min(Math.max(t, 0), 1)
 
@@ -40,9 +44,13 @@ export const createProductOutline = (cfg) => {
   const edgeMat = material(cfg.color)
   const ringMat = material(cfg.color)
   const bandMat = material(cfg.labelBandColor)
+  const glintMat = material(GLINT_COLOR)
 
   let state = null
   let start = null
+  let last = null
+  let solo = true // no other effect playing
+  let rest = 0    // current resting level, eased toward its target
   const _cam = new THREE.Vector3()
 
   const build = ({radiusTop, radiusBottom, height}) => {
@@ -67,6 +75,10 @@ export const createProductOutline = (cfg) => {
     const edgeGeo = new THREE.TubeGeometry(path, 160, tube, 6, false)
     add(edgeGeo, edgeMat, facing)
     add(edgeGeo, edgeMat, facing).rotation.y = Math.PI
+    // Own copy: the glint needs its own moving draw range.
+    const glintGeo = edgeGeo.clone()
+    add(glintGeo, glintMat, facing)
+    add(glintGeo, glintMat, facing).rotation.y = Math.PI
 
     /** Horizontal ring; `arc` = PI gives the camera-facing half (z >= 0). */
     const ring = (radius, y, arc, mat, parent, thickness = tube) => {
@@ -81,7 +93,7 @@ export const createProductOutline = (cfg) => {
       for (const y of [0.5, -0.5]) ring(R, y * height, Math.PI, bandMat, facing, tube * 0.6)
     }
 
-    state = {edgeGeo, edgeIndices: edgeGeo.index.count}
+    state = {edgeGeo, glintGeo, edgeIndices: edgeGeo.index.count}
     return true
   }
 
@@ -89,12 +101,21 @@ export const createProductOutline = (cfg) => {
     start = null
   }
 
+  /** bottleScene: true when no other effect is playing. */
+  const setSolo = (v) => {
+    solo = v
+  }
+
   const update = (timeMs, camera) => {
     if (!state) return
     const t = timeMs / 1000
     if (start === null) start = t
+    const dt = last === null ? 0 : Math.min(t - last, 0.1)
+    last = t
     const age = t - start
     const D = cfg.drawDuration / 1000
+    const fadeAt = D + cfg.holdDuration / 1000
+    const F = Math.max(cfg.fadeDuration / 1000, 0.001)
 
     // Turn the silhouette plane toward the camera (camera position in bottle space).
     if (camera) {
@@ -103,23 +124,42 @@ export const createProductOutline = (cfg) => {
     }
 
     // Trace: edges grow from the base up to the cap, then the rings fade in.
+    const n = state.edgeIndices
     const p = easeOut(clamp01(age / D))
-    state.edgeGeo.setDrawRange(0, Math.floor((p * state.edgeIndices) / 3) * 3)
+    state.edgeGeo.setDrawRange(0, Math.floor((p * n) / 3) * 3)
     const rings = clamp01((age - D * 0.6) / (D * 0.5))
 
-    // A slow breath once drawn, so it reads as live rather than a static sticker.
+    // Rest level: faint when alone, gone while an effect plays; eased so a menu
+    // switch never pops it.
+    const target = solo ? cfg.idleOpacity : 0
+    rest += (target - rest) * (1 - Math.exp(-dt / 0.4))
+    const f = easeOut(clamp01((age - fadeAt) / F)) // 0 = full, 1 = resting
+    const breath = f >= 1 ? 1 - (1 - Math.cos((age - fadeAt - F) * cfg.pulseSpeed)) * 0.3 : 1
+    const level = (cfg.opacity + (rest - cfg.opacity) * f) * breath
+
     liveColor(edgeMat.color, cfg.color)
     liveColor(ringMat.color, cfg.color)
     liveColor(bandMat.color, cfg.labelBandColor)
-    const breath = 1 - (1 - Math.cos(Math.max(0, age - D) * cfg.pulseSpeed)) * 0.12
-    edgeMat.opacity = cfg.opacity * breath
-    ringMat.opacity = cfg.opacity * breath * rings
-    bandMat.opacity = cfg.opacity * 0.6 * rings
+    edgeMat.opacity = level
+    ringMat.opacity = level * rings
+    bandMat.opacity = level * 0.6 * rings
+
+    // Glint: one bright segment runs base -> cap as the line fades.
+    const g = (age - fadeAt) / (F * 1.3)
+    if (g > 0 && g < 1) {
+      const head = easeOut(g) * (1 + GLINT_LENGTH)
+      const a = Math.max(0, head - GLINT_LENGTH), b = Math.min(1, head)
+      const i0 = Math.floor((a * n) / 3) * 3
+      state.glintGeo.setDrawRange(i0, Math.max(0, Math.floor((b * n) / 3) * 3 - i0))
+      glintMat.opacity = cfg.opacity * Math.sin(Math.PI * g)
+    } else {
+      glintMat.opacity = 0
+    }
   }
 
   const getDebugInfo = () => ({
     outlineDrawn: state ? +clamp01(state.edgeGeo.drawRange.count / state.edgeIndices).toFixed(2) : 0,
   })
 
-  return {root, build, update, restartEntrance, getDebugInfo}
+  return {root, build, update, restartEntrance, setSolo, getDebugInfo}
 }
