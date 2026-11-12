@@ -32,6 +32,9 @@ Dashboard tuning is saved per brand, so tuning one never changes another.
    - `targets`: three names `[left, front, right]`.
    - `experience`: start-screen copy; `heroImage` = a file in `public/brands/<id>/`
      (or `logo`, shown instead while there is no photo).
+     Or a turning 3D bottle: `model: {label, capTop, capTopMm, bodyColor, capColor}`
+     (label = the flat art as a ~2048 px JPG in `public/brands/<id>/`; it is wrapped on at
+     the real label size, so the print stays sharp). See zeal's brand file.
    - `theme`: `{accent, teal}` — the app UI's two colours for this brand.
    - `nutrients`: `null`, or `import * as nutrients from './nutrients.js'` (same shape
      as supradyn's).

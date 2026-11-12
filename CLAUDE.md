@@ -52,7 +52,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
 src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
 src/fullscreen.js     double-tap the camera view = toggle full screen (Android; iPhone Safari has no API)
 src/sound.js          UI sounds (Web Audio, unlocked on the Start tap) + haptics
-src/components/ar/    2D UI: StartScreen, AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
+src/components/ar/    2D UI: StartScreen (+ BottleModel: 3D hero lathed from `bottle` + label art, when the brand sets experience.model), AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
 public/brands/<id>/   per brand: hero.jpg, targets/ (generated: JSON + luminance PNG only), models/ (GLB: simplify + meshopt with `npx @gltf-transform/cli`; keep each < ~300 KB)
 public/sounds/        lock.mp3, select.mp3, snap.mp3 (Envato Elements, trimmed + peak-normalised mono MP3); volumes in SOUND (config.js)
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)

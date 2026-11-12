@@ -16,7 +16,10 @@ const GREEN_GLASS = 'rgba(10, 36, 18, 0.85)'
 
 export default {
   id: 'zeal',
-  bottle, // the sticker sits exactly over the Supradyn label: same bottle, same band
+  // Same bottle, but the sticker's ARTWORK (what tracking finds) sits at a different height
+  // than Supradyn's label. Everything 3D (occluder, glow, spotlight, cap effects) hangs off
+  // this number: wrong = a doubled edge at the cap. 10 = tuned on the device (2026-11-12).
+  bottle: {...bottle, labelBottom: 10},
 
   label: {
     source: 'brand-assets/zeal/sticker/body-wrap.png', // flat trim art, generated
@@ -33,10 +36,12 @@ export default {
     product: 'Interactive Services',
     maker: 'Zeal Interactive Services',
     headline: "Let's go interactive.",
-    intro: 'Point your camera at the Zeal bottle and watch it come alive in 3D. Then snap a photo and share it.',
     lookFor: 'the Zeal bottle',
     heroImage: '', // add public/brands/zeal/hero.jpg (bottle with sticker), then 'hero.jpg'
-    logo: 'logo.png', // shown in the hero frame while there is no photo
+    logo: 'logo.png', // shown in the hero frame while there is no photo or model
+    // Start-screen 3D bottle: `bottle` lathed + the sticker art (files in public/brands/zeal/,
+    // exported from brand-assets/zeal/sticker/). Colours = the bottle's teal plastic.
+    model: {label: 'label.jpg', capTop: 'cap-top.jpg', capTopMm: 36, bodyColor: '#06787A', capColor: '#0A9393'},
     photoName: 'zeal-ar.jpg',
   },
 

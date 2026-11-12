@@ -40,7 +40,7 @@ import {BRANDS} from './brands/index.js'
  * Each brand is a folder in src/brands/ (bottle, label, copy, content); see
  * src/brands/README.md. A link can also pick one: `?brand=zeal` (any id in BRANDS).
  */
-const DEFAULT_BRAND = "supradyn";
+const DEFAULT_BRAND = "zeal";
 
 const urlBrand = globalThis.location
   ? new URLSearchParams(globalThis.location.search).get("brand")
@@ -84,6 +84,11 @@ export const EXPERIENCE = {
   ...BRAND.experience,
   heroImage: BRAND.experience.heroImage ? brandFile(BRAND.experience.heroImage) : "",
   logo: BRAND.experience.logo ? brandFile(BRAND.experience.logo) : "",
+  model: BRAND.experience.model && {
+    ...BRAND.experience.model,
+    label: brandFile(BRAND.experience.model.label),
+    capTop: BRAND.experience.model.capTop && brandFile(BRAND.experience.model.capTop),
+  },
 };
 
 /**

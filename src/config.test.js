@@ -7,8 +7,8 @@ const load = async (search) => {
   return import(`./config.js?case=${encodeURIComponent(search)}`)
 }
 
-test('default brand keeps every effect with its content', async () => {
-  const c = await load('')
+test('supradyn keeps every effect with its content', async () => {
+  const c = await load('?brand=supradyn')
   assert.equal(c.BRAND.id, 'supradyn')
   assert.equal(c.EXPERIENCE.heroImage, '/brands/supradyn/hero.jpg')
   for (const id of ['typography', 'callouts', 'tickerRings', 'nutrientOrbit', 'planted', 'scan']) {
@@ -25,5 +25,5 @@ test('effects needing content the brand lacks are switched off', async () => {
 })
 
 test('an unknown brand falls back to the default', async () => {
-  assert.equal((await load('?brand=nope')).BRAND.id, 'supradyn')
+  assert.equal((await load('?brand=nope')).BRAND.id, (await load('')).BRAND.id)
 })

@@ -64,7 +64,6 @@ export default {
     product: 'Naturals Ginseng',
     maker: 'Bayer',
     headline: 'Bring your product to life.',
-    intro: 'Point your camera at your Supradyn Naturals Ginseng bottle and watch it come alive in 3D. Then snap a photo and share it.',
     lookFor: 'your Supradyn bottle', // "Point at ___"
     heroImage: 'hero.jpg', // in public/brands/supradyn/ ('' = no photo)
     photoName: 'supradyn-ar.jpg', // file name of saved photos
