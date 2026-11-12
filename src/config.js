@@ -33,44 +33,24 @@
  * `renderOrder` from src/ar/renderOrder.js (or they flicker against each other).
  */
 
-/**
- * The physical bottle, in MILLIMETRES — measure the real one and type it in here.
- * The single model every animation shares: the outline draws it, the occlusion proxy
- * is built from it, and `npm run generate-targets` reads the label/circumference.
- *
- * The engine tracks only the label band; everything above and below it is drawn from
- * this profile, so its accuracy IS the outline's accuracy. Measure with a ruler stood
- * next to the bottle (heights from the table) and calipers/ruler across (diameters).
- *
- * After changing circumference / labelWidth, run `npm run generate-targets`.
- */
-const BOTTLE_MM = {
-  circumference: 176, // around the label — confirmed on the real bottle
-  labelWidth: 172, // printed label length (artwork KLD: 172 x 52)
-  labelHeight: 52, // printed label height (artwork)
-  labelBottom: 12, // table -> bottom edge of the label. Measured on the real bottle
+import {BRANDS} from './brands/index.js'
 
-  // [height above the table, radius] in mm, base -> cap top.
-  // The body is ONE straight cylinder, same 176mm circumference above, on and below
-  // the label (confirmed; brand-assets/reference/ref-6.jpeg). Only the last ~4mm at
-  // the table curve in — the rounded bottom edge.
-  profile: [
-    [0.8, 26], // base contact (rounded foot)
-    [0.8, 26],
-    [2, 27.5],
-    [4, 28], // full body width
-    [64, 28], // label top (labelBottom + labelHeight); shoulder turns in from here
-    [67.6, 27.2],
-    [71.3, 25.8],
-    [74.9, 23.8],
-    [78.4, 20.2],
-    [79.6, 17.6], // neck
-    [80.4, 17.6],
-    [81.2, 19.6], // cap lip — cap ~39mm across
-    [92.1, 19.6],
-    [93.6, 18.5], // cap top, rounded edge. Total height ~94mm (measured)
-  ],
-};
+/**
+ * WHICH BRAND / PRODUCT THIS BUILD RUNS AS — the one line to change.
+ * Each brand is a folder in src/brands/ (bottle, label, copy, content); see
+ * src/brands/README.md. A link can also pick one: `?brand=zeal` (any id in BRANDS).
+ */
+const DEFAULT_BRAND = "supradyn";
+
+const urlBrand = globalThis.location
+  ? new URLSearchParams(globalThis.location.search).get("brand")
+  : null;
+export const BRAND = BRANDS[urlBrand] ?? BRANDS[DEFAULT_BRAND];
+
+/** Public URL of one of the active brand's files (public/brands/<id>/<file>). */
+export const brandFile = (file) => `/brands/${BRAND.id}/${file}`;
+
+const BOTTLE_MM = BRAND.bottle;
 
 /**
  * The same profile in the units the engine reports: y in label heights from the
@@ -83,6 +63,7 @@ const profile = BOTTLE_MM.profile.map(([h, r]) => [
 
 export const PRODUCT = {
   mm: BOTTLE_MM,
+  label: BRAND.label, // flat artwork: {source, px: {w, h}}
   profile,
   /** Bottle radius (label radii) at height y (label heights), clamped to base..cap. */
   radiusAt: (y) => {
@@ -98,19 +79,11 @@ export const PRODUCT = {
   },
 };
 
-/**
- * The client + product this build is for: everything the 2D UI says about the product.
- * A new client's product = new targets + PRODUCT model + this block (+ its hero image).
- */
+/** Everything the 2D UI says about the product (from the brand file). */
 export const EXPERIENCE = {
-  brand: "Supradyn",
-  product: "Naturals Ginseng",
-  maker: "Bayer",
-  headline: "Bring your product to life.",
-  intro: "Point your camera at your Supradyn Naturals Ginseng bottle and watch it come alive in 3D. Then snap a photo and share it.",
-  lookFor: "your Supradyn bottle", // "Point at ___"
-  heroImage: "/brand/hero.jpg", // product photo on the start screen (public/)
-  photoName: "supradyn-ar.jpg", // file name of saved photos
+  ...BRAND.experience,
+  heroImage: BRAND.experience.heroImage ? brandFile(BRAND.experience.heroImage) : "",
+  logo: BRAND.experience.logo ? brandFile(BRAND.experience.logo) : "",
 };
 
 /**
@@ -127,13 +100,14 @@ export const SOUND = {
 /** Image-target tracking. */
 export const TRACKING = {
   /**
-   * Targets to load from public/image-targets/<name>.json. They are overlapping crops
+   * Targets to load from public/brands/<brand>/targets/<name>.json (the brand file
+   * names them). They are overlapping crops
    * of ONE label (see scripts/generate-targets.mjs) so the bottle is detected from
    * any side; all report the same cylinder frame. When several are tracked at once,
    * the first one found drives the pose (src/ar/leadTarget.js). A missing file is
    * skipped with a console warning.
    */
-  targets: ["supradyn-bottle", "supradyn-bottle-left", "supradyn-bottle-right"],
+  targets: BRAND.targets,
 
   /**
    * Pose smoothing time constant, ms. Higher = steadier but the content lags behind
@@ -226,49 +200,14 @@ export const ANIMATIONS = {
     // it on the phone, rotate them round the bottle here (+ = to the right).
     printAzimuthDeg: 0,
 
-    words: {
-      supradyn: {
-        show: true,
-        faceColor: "#1F3A8A", // logo navy (lifted a touch: the matcap darkens it, deeper reads black)
-        sideColor: "#3355AA", // same navy, lighter so the depth reads
-        glowColor: "#FFC84A",
-        glow: 0.18, // gold glow behind the letters, 0..1
-        slantDeg: 12, // the logo's italic
-        letterHeight: 0.22, // lifted letters, x label height
-        radius: 1.45, // orbit radius, x bottle radius
-        height: 0.45, // orbit height, x label height from its centre (print +0.26)
-        direction: -1, // 1 = front moves right, -1 = left
-        speed: 0.3, // rev/s
-        rounds: 1, // whole turns before it lands back on its print
-        delay: 0.3, // s after the animation starts
-        loop: true, // replay after exiting
-        loopPause: 1.5, // s between loops
-      },
-      ginseng: {
-        show: true,
-        faceColor: "#E2483B", // label red
-        sideColor: "#D9A23A",
-        glowColor: "#FFC84A",
-        glow: 0.2,
-        slantDeg: 0,
-        letterHeight: 0.2,
-        radius: 1.3,
-        height: 0, // print is at -0.25
-        direction: 1,
-        speed: 0.3,
-        rounds: 1,
-        delay: 0,
-        loop: true,
-        loopPause: 1.5,
-      },
-    },
+    // Which printed words lift off, with their print box + knobs: per brand.
+    words: {},
   },
 
   /**
    * Feature callouts: a dot on the bottle, a line drawn out to the side, a card whose
    * text types in. Alternate items left/right; switching away plays it backwards.
-   * Copy is the front label's own claims ("helps boost energy, stamina & mental focus",
-   * "multivitamin for men") — keep new text to what the pack says.
+   * Items (the copy) come from the brand file.
    */
   [AnimationId.CALLOUTS]: {
     enabled: true,
@@ -280,12 +219,7 @@ export const ANIMATIONS = {
     // side: -1 left / 1 right of the bottle on screen; y: where the dot sits on the
     // label, x label height from its centre (label = -0.5..0.5; keep within ±0.4).
     // Order = entrance order.
-    items: {
-      energy: {text: "Energy boost", side: -1, y: 0.3},
-      focus: {text: "Mental focus", side: 1, y: 0.15},
-      stamina: {text: "Stamina", side: -1, y: -0.15},
-      men: {text: "Multivitamin", side: 1, y: -0.3},
-    },
+    items: {}, // per brand
     stagger: 650, // ms between items entering
     typeSpeed: 45, // ms per letter
     cursorLinger: 900, // ms the cursor blinks after the text is complete
@@ -303,7 +237,7 @@ export const ANIMATIONS = {
 
   /**
    * Ticker: text bands wrapped round the bottle, tilted, scrolling opposite ways. The
-   * far side passes behind the bottle. Copy = the front label's own words.
+   * far side passes behind the bottle. The rings' text comes from the brand file.
    * Text, colours, radius and band height are read when built (reload to see edits);
    * height, tilt, speed and direction are live.
    */
@@ -314,10 +248,7 @@ export const ANIMATIONS = {
     label: "Ticker",
     delay: 0,
 
-    rings: {
-      top: {text: "ENERGY  •  STAMINA  •  MENTAL FOCUS", y: 0.3, radius: 1.3, tiltDeg: 7, speed: 0.05, direction: -1},
-      bottom: {text: "GINSENG  •  MULTIVITAMIN FOR MEN", y: -0.28, radius: 1.42, tiltDeg: -5, speed: 0.04, direction: 1},
-    },
+    rings: {}, // per brand
     bandHeight: 0.19, // x label height
     entranceDuration: 1100, // ms per ring to unfold (exit takes 60% of it)
     stagger: 300, // ms between rings
@@ -344,10 +275,12 @@ export const ANIMATIONS = {
    * and bounce onto it. Real textured models, lit + shadowed. See planted.js.
    */
   [AnimationId.PLANTED]: {
-    enabled: true,
     active: false,
     group: "elements",
     label: "Planted",
+    // Off unless the brand opts in: it uses that brand's own models
+    // (public/brands/<brand>/models: soil, ginseng-root, grape) and nutrient captions.
+    enabled: false,
     delay: 0,
 
     soilSize: 1.75, // mound width, x label height (bottle is ~1.1 wide)
@@ -497,6 +430,31 @@ export const DEBUG = {
   /** Starting animation-speed multiplier; the debug panel changes it live. */
   speed: 1,
 };
+
+/**
+ * The brand's overrides, deep-merged onto the defaults above. Then any effect whose
+ * content the brand doesn't have is switched off, so a new brand needs no list of
+ * what to disable — add the content and the effect appears.
+ */
+const isObject = (v) => v && typeof v === "object" && !Array.isArray(v);
+const merge = (into, from) => {
+  for (const [k, v] of Object.entries(from)) {
+    if (isObject(v) && isObject(into[k])) merge(into[k], v);
+    else into[k] = v;
+  }
+};
+merge(ANIMATIONS, BRAND.animations ?? {});
+const hasNutrients = (BRAND.nutrients?.NUTRIENTS?.length ?? 0) > 0;
+const hasAny = (o) => Object.keys(o ?? {}).length > 0;
+const needs = {
+  [AnimationId.TYPOGRAPHY]: hasAny(ANIMATIONS[AnimationId.TYPOGRAPHY].words) && !!BRAND.label?.px,
+  [AnimationId.CALLOUTS]: hasAny(ANIMATIONS[AnimationId.CALLOUTS].items),
+  [AnimationId.TICKER]: hasAny(ANIMATIONS[AnimationId.TICKER].rings),
+  [AnimationId.NUTRIENT_ORBIT]: hasNutrients,
+  [AnimationId.SCAN]: hasNutrients,
+  [AnimationId.PLANTED]: hasNutrients,
+};
+for (const [id, ok] of Object.entries(needs)) if (!ok) ANIMATIONS[id].enabled = false;
 
 /** Ids of every enabled animation, in declaration order. */
 export const enabledAnimationIds = () =>

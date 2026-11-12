@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Body wrap sticker template. 1 unit = 1 mm. Document = 178 x 58 mm (172 x 52 trim + 3 mm bleed).
+  Export at 300 dpi = 2102 x 685 px (or 600 dpi = 4205 x 1370 px).
+  Put artwork in the "ARTWORK" group, filling the full bleed. Hide/delete "GUIDES" before export.
+  Tracking windows = the three 3:4 crops scripts/generate-targets.mjs cuts (69.3 mm each).
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="178mm" height="58mm" viewBox="0 0 178 58">
+  <g id="ARTWORK">
+    <rect x="0" y="0" width="178" height="58" fill="#ffffff"/>
+  </g>
+
+  <g id="GUIDES" fill="none" font-family="Arial, sans-serif">
+    <!-- Bleed area (gets trimmed off): art must still reach here -->
+    <rect x="0.15" y="0.15" width="177.7" height="57.7" stroke="#ff2d55" stroke-width="0.3" stroke-dasharray="1.5 1"/>
+    <!-- TRIM / cut line: 172 x 52 mm -->
+    <rect x="3" y="3" width="172" height="52" stroke="#000" stroke-width="0.35"/>
+    <!-- Safe zone: logo + text stay inside -->
+    <rect x="6" y="6" width="166" height="46" stroke="#00a2ff" stroke-width="0.25" stroke-dasharray="1 1"/>
+
+    <!-- Tracking windows (each must be full of high-contrast detail) -->
+    <rect x="3" y="3" width="69.33" height="52" fill="#ffb800" fill-opacity="0.06" stroke="#ffb800" stroke-width="0.25"/>
+    <rect x="54.33" y="3" width="69.33" height="52" fill="#00c48c" fill-opacity="0.06" stroke="#00c48c" stroke-width="0.25"/>
+    <rect x="105.67" y="3" width="69.33" height="52" fill="#a259ff" fill-opacity="0.06" stroke="#a259ff" stroke-width="0.25"/>
+    <text x="5" y="9.5" font-size="2.4" fill="#b37f00">window L (0–69 mm)</text>
+    <text x="89" y="9.5" font-size="2.4" fill="#008a62" text-anchor="middle">window FRONT (51–121 mm) · faces camera</text>
+    <text x="173" y="9.5" font-size="2.4" fill="#7a3ccc" text-anchor="end">window R (103–172 mm)</text>
+
+    <!-- Centre of the front (what the camera sees first) -->
+    <line x1="89" y1="3" x2="89" y2="55" stroke="#008a62" stroke-width="0.2" stroke-dasharray="0.8 0.8"/>
+
+    <!-- Back seam: the two ends meet here on the bottle, with a ~4 mm gap -->
+    <text x="4" y="52.5" font-size="2.2" fill="#000">◀ back seam</text>
+    <text x="174" y="52.5" font-size="2.2" fill="#000" text-anchor="end">back seam ▶</text>
+
+    <text x="89" y="51" font-size="2.2" fill="#555" text-anchor="middle">TRIM 172 x 52 mm · bottom edge sits 12 mm above the table · removable MATTE opaque vinyl</text>
+  </g>
+</svg>

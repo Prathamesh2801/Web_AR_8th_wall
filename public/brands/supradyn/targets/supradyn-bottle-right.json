@@ -1,11 +1,11 @@
 {
-  "imagePath": "image-targets/supradyn-bottle-left_luminance.png",
+  "imagePath": "brands/supradyn/targets/supradyn-bottle-right_luminance.png",
   "metadata": null,
-  "name": "supradyn-bottle-left",
+  "name": "supradyn-bottle-right",
   "type": "CYLINDER",
   "properties": {
     "left": 0,
-    "top": 0,
+    "top": 2425,
     "width": 1229,
     "height": 1639,
     "isRotated": true,
@@ -21,11 +21,11 @@
     "unit": "mm"
   },
   "resources": {
-    "originalImage": "supradyn-bottle-left_original.png",
-    "croppedImage": "supradyn-bottle-left_cropped.png",
-    "thumbnailImage": "supradyn-bottle-left_thumbnail.png",
-    "luminanceImage": "supradyn-bottle-left_luminance.png"
+    "originalImage": "supradyn-bottle-right_original.png",
+    "croppedImage": "supradyn-bottle-right_cropped.png",
+    "thumbnailImage": "supradyn-bottle-right_thumbnail.png",
+    "luminanceImage": "supradyn-bottle-right_luminance.png"
   },
-  "created": 1793684903894,
-  "updated": 1793684903894
+  "created": 1794462168409,
+  "updated": 1794462168409
 }

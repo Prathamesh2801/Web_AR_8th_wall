@@ -1,7 +1,7 @@
 /**
  * typography.js — animation A01 "3D Typography": printed words come to life.
  *
- * Each word in config (`words.supradyn`, `words.ginseng`) runs its own timeline:
+ * Each word in config `words` (from the brand file, e.g. supradyn + ginseng) runs its own timeline:
  *   Recognise  a shimmer sweeps across the printed letters
  *   Lift       letter by letter the flat copy peels off the label, extrudes into 3D
  *              and grows, keeping its curve round the bottle; a gold glow wakes behind it
@@ -10,8 +10,8 @@
  *   Exit       the entrance in reverse: letters settle back into the print, last
  *              letter first, a closing shimmer, gone (`loop` replays after `loopPause`)
  *
- * Start on the print: ART holds each word's box in the label source
- * (brand-assets/label, 4064 x 1229 px; x0-x1 and cap top -> baseline), mapped onto the
+ * Start on the print: each word's `print` holds its box in the brand's flat label
+ * (PRODUCT.label.px; x0-x1 and cap top -> baseline, in source px), mapped onto the
  * tracked label cylinder, letters stretched (sx0) to the printed spacing and slanted
  * like the print; the stretch relaxes to the real font as they lift.
  *
@@ -29,11 +29,6 @@ import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 
 const FONT_URL = '/fonts/montserrat-800.typeface.json' // Montserrat ExtraBold, A-Z a-z
-const LABEL_PX = {w: 4064, h: 1229}
-const ART = {
-  ginseng: {text: 'GINSENG', x0: 1668, x1: 2223, top: 877, base: 979},
-  supradyn: {text: 'Supradyn', x0: 1756, x1: 2275, top: 244, base: 354},
-}
 const CAP = 0.7 // Montserrat cap height, em
 
 // Seconds, from a word's own start.
@@ -94,7 +89,8 @@ export const createTypography = (cfg) => {
 
   /** One word: geometry, its print mapping, and its own timeline state. */
   const buildWord = (key, R, H, matcap, glowTex) => {
-    const art = ART[key]
+    const art = cfg.words[key].print
+    const LABEL_PX = PRODUCT.label.px
     const {resolution: res, glyphs} = font.data
     const {mm} = PRODUCT
     const chars = [...art.text]
@@ -170,7 +166,7 @@ export const createTypography = (cfg) => {
     if (!font || !(R > 0) || !(H > 0)) return false
     const matcap = makeMatcap()
     const glowTex = makeGlow()
-    const words = Object.keys(ART).filter(k => cfg.words[k]).map(k => buildWord(k, R, H, matcap, glowTex))
+    const words = Object.keys(cfg.words).filter(k => cfg.words[k].print).map(k => buildWord(k, R, H, matcap, glowTex))
     words.forEach(restartWord)
     built = {R, H, words}
     return true

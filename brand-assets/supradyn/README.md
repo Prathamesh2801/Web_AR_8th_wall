@@ -2,17 +2,17 @@
 
 Reference material for building AR on this product. Drop new brand material here
 (artwork, photos, colour specs, copy decks). Nothing in this folder is served to users;
-the app reads only `public/image-targets/`.
+the app reads only `public/brands/supradyn/` (made from here by
+`npm run generate-targets -- supradyn`).
 
-Git: this README, `label/` and `reference/` are committed. Everything else stays
-local (see `.gitignore`), so keep a copy of anything you drop here.
+Git: everything here is committed except `photos/` (local only, see `.gitignore`).
 
 ## label/supradyn-60-label-source.png  (committed)
 
 Flat production label, exported from the printer's `60_curvas.ai` (page 1, text
 outlined; varnish, die-cut and dimension layers removed). 4064 x 1229 px @ 600 dpi.
-It is the input to `npm run generate-targets` and the source the nutrient values in
-`src/ar/nutrientData.js` were transcribed from.
+It is the input to `npm run generate-targets -- supradyn` and the source the nutrient values in
+`src/brands/supradyn/nutrients.js` were transcribed from.
 
 | Fact | Value |
 |---|---|
@@ -77,7 +77,7 @@ Also present in small areas: GINSENG red (headline), the orange-red logo swoosh.
 ## The bottle's shape (for every animation)
 
 The image target measures only the 52 mm label band. The rest of the bottle is
-modelled in **millimetres** in `src/config.js` (`BOTTLE_MM`): heights from the table,
+modelled in **millimetres** in `src/brands/supradyn/brand.js` (`bottle`): heights from the table,
 radii, label size and circumference. `PRODUCT.profile` is the same shape converted to
 engine units; the outline draws it, the occlusion proxy is built from it, and
 `npm run generate-targets` reads the label/circumference from it.
@@ -118,5 +118,5 @@ On-device screenshots of the outline locked to the real bottle (Android Chrome):
 | `ref-6.jpeg` | real bottle close-up, no AR — shows the body is straight below the label |
 
 The tracked-* shots show the first profile (cap too high); ref-5 the second (base
-pinched). `BOTTLE_MM` was corrected from them. New shots after a change go here too, so the next person can see what
+pinched). The bottle model was corrected from them. New shots after a change go here too, so the next person can see what
 "right" looks like.

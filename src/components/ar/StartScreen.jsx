@@ -56,11 +56,18 @@ export const StartScreen = ({onStart, unsupportedReason}) => (
       {/* Hero: the product, framed by the same scan corners the camera view uses. */}
       <div className="relative mx-auto mt-5 aspect-[3/4] h-[27vh] max-h-72 min-h-40">
         <div aria-hidden="true" className="absolute -inset-6 rounded-full bg-gold/20 blur-3xl" />
-        <img
-          src={EXPERIENCE.heroImage}
-          alt={`${EXPERIENCE.brand} ${EXPERIENCE.product}`}
-          className="relative h-full w-full rounded-[1.75rem] object-cover shadow-2xl"
-        />
+        {/* A brand without a hero photo yet shows its logo in the framed scan area. */}
+        {EXPERIENCE.heroImage ? (
+          <img
+            src={EXPERIENCE.heroImage}
+            alt={`${EXPERIENCE.brand} ${EXPERIENCE.product}`}
+            className="relative h-full w-full rounded-[1.75rem] object-cover shadow-2xl"
+          />
+        ) : (
+          <div className="relative flex h-full w-full items-center justify-center rounded-[1.75rem] bg-white/5 ring-1 ring-white/10">
+            {EXPERIENCE.logo && <img src={EXPERIENCE.logo} alt={EXPERIENCE.brand} className="w-3/4" />}
+          </div>
+        )}
         {CORNERS.map(c => <span key={c} aria-hidden="true" className={`absolute h-6 w-6 border-white/90 ${c}`} />)}
         <span aria-hidden="true" className="absolute inset-x-5 top-6 h-px animate-[heroScan_3s_ease-in-out_infinite] bg-gold shadow-[0_0_12px_2px] shadow-gold/70" />
         <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-neutral-950/85 px-3 py-1.5 text-[11px] font-semibold text-white ring-1 ring-white/15">

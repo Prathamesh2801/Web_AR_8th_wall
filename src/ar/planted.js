@@ -20,14 +20,14 @@
  *  - Grade: slightly desaturated with a little moving grain, like the camera's own.
  *  - Roots clipped at the table plane: nothing pokes out under the real table.
  *
- * Models: public/models (Meshy AI, textured PBR; simplified + meshopt + webp). Root rests
+ * Models: public/brands/<brand>/models (Meshy AI, textured PBR; simplified + meshopt + webp). Root rests
  * and berry landings are measured on the soil mesh itself (raycast at build).
  */
 import * as THREE from 'three'
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
 import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 
-import {PRODUCT} from '../config'
+import {PRODUCT, brandFile} from '../config'
 import {makeCard} from './callouts'
 import {cameraLight} from './cameraLight'
 import {NUTRIENTS} from './nutrientData'
@@ -185,7 +185,7 @@ export const createPlanted = (cfg) => {
   let exiting = false
 
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
-  Promise.all(MODELS.map(n => loader.loadAsync(`/models/${n}.glb`)))
+  Promise.all(MODELS.map(n => loader.loadAsync(brandFile(`models/${n}.glb`))))
     .then((gltfs) => { models = gltfs.map(g => g.scene) })
     .catch(err => console.warn('[AR] planted models failed to load', err))
 

@@ -28,23 +28,25 @@ outline, animation speed).
 
 ## Tuning
 
-Everything is in **`src/config.js`** — targets, pose smoothing, loss grace period, which
-animations exist and which start on, their colours and timing. Contributor/agent notes,
+Everything is in **`src/config.js`** — which brand runs (`DEFAULT_BRAND`, or `?brand=<id>`
+in the URL), pose smoothing, loss grace period, which animations exist and which start on,
+their colours and timing. Each product/brand is a folder in **`src/brands/`**; how to add
+one is in [`src/brands/README.md`](src/brands/README.md). Contributor/agent notes,
 architecture and the animation contract are in **`CLAUDE.md`**.
 
 ## Image targets
 
-`npm run generate-targets` rebuilds `public/image-targets/` from
-`brand-assets/label/supradyn-60-label-source.png` (flat production artwork, 172 × 52 mm
-label on a 176 mm bottle). The engine needs a 3:4 crop, which covers only ~40% of this label, so the script
+`npm run generate-targets -- <brand>` rebuilds `public/brands/<brand>/targets/` from that
+brand's flat label (for supradyn: `brand-assets/supradyn/label/supradyn-60-label-source.png`,
+172 × 52 mm label on a 176 mm bottle). The engine needs a 3:4 crop, which covers only ~40% of this label, so the script
 writes three overlapping crops — left (supplement facts), centre (logo), right (nutrition
 table + barcode) — giving detection from any side.
 
 ## Brand assets
 
-`brand-assets/` is where brand reference material goes (artwork, photos, specs). Its
-README records the product facts the code depends on. Only the README and the flat label
-are committed; drop anything else there freely — it stays local.
+`brand-assets/<brand>/` is where each brand's reference material goes (artwork, photos,
+specs). Its README records the product facts the code depends on. Everything there is
+committed except `photos/`, which stays local.
 
 ## Test checklist (real bottle + phone)
 
@@ -69,7 +71,7 @@ are committed; drop anything else there freely — it stays local.
 |---|---|
 | Never detects | Poor light / glare on the label; check console for skipped targets |
 | Content offset or wrong curvature | Circumference vs label width wrong in `scripts/generate-targets.mjs` |
-| Outline off the real neck/cap/base | Measure the bottle and fix `BOTTLE_MM` in `src/config.js` |
+| Outline off the real neck/cap/base | Measure the bottle and fix `bottle` in `src/brands/<brand>/brand.js` |
 | Outline right shape but drifts as the bottle moves | Tracking/pose issue — check the debug panel |
 | Content swims behind a moving bottle | Lower `TRACKING.smoothingMs` |
 | Content jitters on a still bottle | Raise `TRACKING.smoothingMs` |

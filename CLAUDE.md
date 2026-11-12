@@ -12,7 +12,7 @@ npm run tunnel -- <url>   # HTTP dev server behind a VS Code forwarded port (rea
 npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
-npm run generate-targets  # rebuild public/image-targets/* from the flat label PNG
+npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
 ```
 
 Append `?debug` to the URL to get the TUNE button: the dashboard (src/components/ar/Dashboard.jsx).
@@ -23,7 +23,9 @@ speed, stats. Edits persist in that browser only; "Copy settings" -> paste into 
 
 ```
 index.html            8th Wall engine/xrextras/landing-page <script>s (CDN, pinned 1.0.0) + #camerafeed canvas
-src/config.js         THE tuning file: targets, smoothing, animations, occlusion, debug. Start here.
+src/config.js         THE tuning file: active brand (DEFAULT_BRAND / ?brand=), smoothing, animations, occlusion, debug. Start here.
+src/brands/           one folder per product/brand: brand.js (bottle mm, label, targets, copy, effect content) + data. README = how to add one
+  index.js              registry {id: brand}
 src/ar/               engine + three.js. NO React imports in this folder.
   startAR.js            loads targets, configures XR8, registers pipeline modules
   imageTargetPipelineModule.js   image events -> lead target -> bottleScene + store
@@ -45,19 +47,17 @@ src/ar/               engine + three.js. NO React imports in this folder.
   cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 16 px), for lit effects
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
-  nutrientData.js       nutrient values, transcribed from the label artwork
+  nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
 src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
 src/fullscreen.js     double-tap the camera view = toggle full screen (Android; iPhone Safari has no API)
 src/sound.js          UI sounds (Web Audio, unlocked on the Start tap) + haptics
 src/components/ar/    2D UI: StartScreen, AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
-public/brand/         start-screen hero photo (EXPERIENCE.heroImage)
+public/brands/<id>/   per brand: hero.jpg, targets/ (generated: JSON + luminance PNG only), models/ (GLB: simplify + meshopt with `npx @gltf-transform/cli`; keep each < ~300 KB)
 public/sounds/        lock.mp3, select.mp3, snap.mp3 (Envato Elements, trimmed + peak-normalised mono MP3); volumes in SOUND (config.js)
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
-public/models/        GLB models (simplify + meshopt with `npx @gltf-transform/cli`; keep each < ~300 KB)
 public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)
-public/image-targets/ generated targets: JSON + luminance PNG only (the engine fetches just imagePath)
-brand-assets/         brand reference: README (product facts + shape), label/ + reference/ (committed), photos/ (local)
+brand-assets/<id>/    brand reference: README (product facts + shape), label/ or sticker/ art, reference/ (committed), photos/ (local)
 ```
 
 ## Lens menu (Penpot page "02 · Lens Menu")
@@ -70,8 +70,10 @@ the menu and keeps the choice. The outline (no `group`, `active: true`) is the l
 The carousel is a native CSS scroll-snap scroller (platform momentum); the pick commits
 when scrolling settles. Slot 0 = no effect.
 
-All product copy (start screen, hints, photo file name) comes from `EXPERIENCE` in
-config.js: a new client's product = new targets + `BOTTLE_MM` model + `EXPERIENCE` + hero.
+All product copy (start screen, hints, photo file name) comes from the brand file's
+`experience`: a new client's product = a new `src/brands/<id>/` (see its README).
+Effects needing product content (Typography, Callouts, Ticker, Orbit, Scan, Planted) are
+switched off automatically for a brand that doesn't provide it.
 
 ## Data flow
 
@@ -97,7 +99,9 @@ Rules every animation must follow (each one was a real bug here):
 - Give every transparent mesh a `renderOrder` from `renderOrder.js` (else it flickers).
 - Use `PRODUCT.profile` (config.js) for anything shaped to the bottle â€” it is the one
   bottle model; the outline and the occluder are both built from it. Edit the shape in
-  `BOTTLE_MM` (millimetres, heights from the table), never the converted profile.
+  the brand file's `bottle` (millimetres, heights from the table), never the converted profile.
+- Never hard-code product content (words, claims, model files) in an effect: read it
+  from config (brand-merged) or `brandFile()`, so every brand can use the effect.
 
 ## Tracking facts (verified in the engine source, don't "fix" these)
 
@@ -109,7 +113,7 @@ Rules every animation must follow (each one was a real bug here):
   crops (`supradyn-bottle`, `-left`, `-right`) cover the full wrap. The engine reports pose
   for the FULL label cylinder regardless of crop (`detection-image.cc`, `activationRegion`),
   so crops share one frame.
-- Label 172 mm on a 176 mm circumference bottle (see brand-assets/README.md).
+- Label 172 mm on a 176 mm circumference bottle (see brand-assets/supradyn/README.md).
 
 ## Can't be verified without the physical bottle
 

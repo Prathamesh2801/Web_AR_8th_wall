@@ -1,0 +1,31 @@
+{
+  "imagePath": "brands/zeal/targets/zeal-left_luminance.png",
+  "metadata": null,
+  "name": "zeal-left",
+  "type": "CYLINDER",
+  "properties": {
+    "left": 0,
+    "top": 0,
+    "width": 1228,
+    "height": 1637,
+    "isRotated": true,
+    "originalWidth": 1228,
+    "originalHeight": 4063,
+    "targetCircumferenceTop": 172,
+    "cylinderCircumferenceTop": 176,
+    "cylinderCircumferenceBottom": 176,
+    "cylinderSideLength": 51.985232586758556,
+    "arcAngle": 351.8181818181818,
+    "coniness": 0,
+    "inputMode": "ADVANCED",
+    "unit": "mm"
+  },
+  "resources": {
+    "originalImage": "zeal-left_original.png",
+    "croppedImage": "zeal-left_cropped.png",
+    "thumbnailImage": "zeal-left_thumbnail.png",
+    "luminanceImage": "zeal-left_luminance.png"
+  },
+  "created": 1794463729903,
+  "updated": 1794463729903
+}

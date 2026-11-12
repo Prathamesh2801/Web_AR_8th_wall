@@ -1,6 +1,8 @@
 /**
- * Regenerates every image target from the flat label artwork. Non-interactive and
- * reproducible: `npm run generate-targets`.
+ * Regenerates a brand's image targets from its flat label artwork. Non-interactive and
+ * reproducible: `npm run generate-targets -- <brand>` (default: supradyn). The brand
+ * file (src/brands/<brand>/brand.js) gives the artwork, bottle size and target names;
+ * output goes to public/brands/<brand>/targets/.
  *
  * WHY SEVERAL TARGETS FROM ONE LABEL
  * The engine needs a 3:4 crop. Our label is 172 x 52 mm, so one crop covers only
@@ -15,17 +17,21 @@
  * Uses the CLI's own `applyCrop`, so the output is byte-for-byte what the
  * interactive `npx @8thwall/image-target-cli` would write.
  */
-import {rm} from 'node:fs/promises'
+import {mkdir, readFile, rm, writeFile} from 'node:fs/promises'
 import sharp from 'sharp'
 import {applyCrop} from '@8thwall/image-target-cli/src/apply.js'
-import {PRODUCT} from '../src/config.js'
+import {BRANDS} from '../src/brands/index.js'
 
-const SOURCE = 'brand-assets/label/supradyn-60-label-source.png'
-const OUT = 'public/image-targets'
+const id = process.argv[2] ?? 'supradyn'
+const brand = BRANDS[id]
+if (!brand) throw new Error(`Unknown brand "${id}". Known: ${Object.keys(BRANDS).join(', ')}`)
+const SOURCE = brand.label.source
+const OUT = `public/brands/${id}/targets`
+await mkdir(OUT, {recursive: true})
 
-// Physical measurements live in src/config.js (PRODUCT.mm) — one source for the
-// tracker and the animations.
-const {labelWidth: LABEL_WIDTH_MM, circumference: CYLINDER_CIRCUMFERENCE_MM} = PRODUCT.mm
+// Physical measurements live in the brand file — one source for the tracker and the
+// animations.
+const {labelWidth: LABEL_WIDTH_MM, circumference: CYLINDER_CIRCUMFERENCE_MM} = brand.bottle
 
 const image = sharp(SOURCE)
 const {width, height} = await image.metadata() // 4064 x 1229, landscape
@@ -36,12 +42,12 @@ const cropW = height
 const cropH = Math.round((cropW * 4) / 3)
 const span = width - cropH
 
-// Names must match TRACKING.targets in src/config.js. The centre keeps the original
-// name so existing links/debug output stay valid.
+// brand.targets = [left, front, right] names.
+const [left, front, right] = brand.targets
 const CROPS = [
-  {name: 'supradyn-bottle-left', top: 0},                  // supplement-facts side
-  {name: 'supradyn-bottle', top: Math.round(span / 2)},    // logo / GINSENG front
-  {name: 'supradyn-bottle-right', top: span},              // nutrition table + barcode
+  {name: left, top: 0},
+  {name: front, top: Math.round(span / 2)},
+  {name: right, top: span},
 ]
 
 for (const {name, top} of CROPS) {
@@ -70,5 +76,10 @@ for (const {name, top} of CROPS) {
   for (const extra of ['original', 'cropped', 'thumbnail']) {
     await rm(`${OUT}/${name}_${extra}.png`)
   }
+  // The CLI hard-codes imagePath as "image-targets/<file>"; the engine fetches it as a
+  // site-root URL, so point it at where this brand's targets are served.
+  const meta = JSON.parse(await readFile(dataPath, 'utf8'))
+  meta.imagePath = meta.imagePath.replace(/^image-targets\//, `brands/${id}/targets/`)
+  await writeFile(dataPath, JSON.stringify(meta, null, 2))
   console.log('wrote', dataPath, `(crop top ${top}..${top + cropH} of ${width})`)
 }

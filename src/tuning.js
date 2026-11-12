@@ -7,9 +7,9 @@
  * source of truth: "Copy settings" puts the tuned values on the clipboard to paste
  * back into it, and "Reset" returns to it. Normal visits (no `?debug`) never load them.
  */
-import {ANIMATIONS, SOUND} from './config'
+import {ANIMATIONS, BRAND, SOUND} from './config'
 
-const KEY = 'supradyn-ar-tuning'
+const KEY = `${BRAND.id}-ar-tuning` // per brand: one brand's tuning must not leak into another
 /** Everything the dashboard edits; saved / copied as one object. */
 const TUNED = {animations: ANIMATIONS, sound: SOUND}
 const DEFAULTS = structuredClone(TUNED)

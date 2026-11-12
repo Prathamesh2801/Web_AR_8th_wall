@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Cap-top sticker template. 1 unit = 1 mm. Document = 40 x 40 mm (36 mm cut + 2 mm bleed).
+  Measure the FLAT top of the cap first; cut diameter = that minus ~2 mm (cap is ~39 mm
+  across, rounded rim). If it differs from 36, scale the TRIM circle to match.
+  Export at 300 dpi = 472 x 472 px. Hide/delete "GUIDES" before export.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="40mm" height="40mm" viewBox="0 0 40 40">
+  <g id="ARTWORK">
+    <circle cx="20" cy="20" r="20" fill="#ffffff"/>
+  </g>
+
+  <g id="GUIDES" fill="none" font-family="Arial, sans-serif">
+    <circle cx="20" cy="20" r="19.85" stroke="#ff2d55" stroke-width="0.25" stroke-dasharray="1.2 0.8"/>
+    <circle cx="20" cy="20" r="18" stroke="#000" stroke-width="0.3"/>
+    <circle cx="20" cy="20" r="15.5" stroke="#00a2ff" stroke-width="0.2" stroke-dasharray="0.8 0.8"/>
+    <text x="20" y="20.6" font-size="1.8" fill="#555" text-anchor="middle">CUT Ø 36 mm</text>
+    <text x="20" y="23" font-size="1.4" fill="#00a2ff" text-anchor="middle">logo inside blue</text>
+  </g>
+</svg>

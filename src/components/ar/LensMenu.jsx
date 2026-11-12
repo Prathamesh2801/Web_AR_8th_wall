@@ -23,14 +23,14 @@ const ICONS = {
     <svg viewBox="0 0 40 40" className="h-7 w-7" aria-hidden="true">
       <ellipse cx="20" cy="20" rx="16" ry="7" fill="none" stroke="white" strokeOpacity="0.85" strokeWidth="1.6" transform="rotate(-12 20 20)" />
       <rect x="16.5" y="11" width="7" height="17" rx="2.5" fill="white" fillOpacity="0.9" />
-      <circle cx="5" cy="23" r="3" fill="#FFD45A" />
+      <circle cx="5" cy="23" r="3" className="fill-gold" />
       <circle cx="31" cy="13.5" r="2.6" fill="#7FE3D3" />
       <circle cx="27" cy="27" r="2.6" fill="#F08A5D" />
     </svg>
   ),
   glow: () => (
     <svg viewBox="0 0 40 40" className="h-7 w-7" aria-hidden="true">
-      <circle cx="20" cy="20" r="12" fill="#FFD45A" fillOpacity="0.35" />
+      <circle cx="20" cy="20" r="12" className="fill-gold" fillOpacity="0.35" />
       <path d="M20 7 C21.5 18.5 21.5 18.5 33 20 C21.5 21.5 21.5 21.5 20 33 C18.5 21.5 18.5 21.5 7 20 C18.5 18.5 18.5 18.5 20 7 Z" fill="#FFF8D6" />
     </svg>
   ),

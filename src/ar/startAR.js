@@ -9,7 +9,7 @@
  */
 import * as THREE from 'three'
 
-import {TRACKING} from '../config'
+import {BRAND, TRACKING, brandFile} from '../config'
 import {CAMERA_SAMPLE_PX} from './cameraLight'
 import {createImageTargetPipelineModule} from './imageTargetPipelineModule'
 import {trackingStore} from './trackingStore'
@@ -26,9 +26,9 @@ window.THREE = THREE
 /**
  * Target metadata is fetched at runtime rather than imported: Vite forbids importing
  * from `public/`, and the engine resolves each JSON's `imagePath` as a site-root URL,
- * so the files must be served verbatim from public/image-targets/.
+ * so the files must be served verbatim from public/brands/<brand>/targets/.
  */
-const targetUrl = name => `/image-targets/${name}.json`
+const targetUrl = name => brandFile(`targets/${name}.json`)
 
 /** Loads every configured target; a missing one is skipped, all missing is fatal. */
 const loadTargets = async () => {
@@ -151,7 +151,7 @@ export const startAR = async (canvas) => {
     const targets = await loadTargets()
     if (!targets.length) {
       trackingStore.setError(
-        'Could not load any image target from /image-targets/. Run: npm run generate-targets'
+        `Could not load any image target for brand "${BRAND.id}". Run: npm run generate-targets -- ${BRAND.id}`
       )
       return
     }

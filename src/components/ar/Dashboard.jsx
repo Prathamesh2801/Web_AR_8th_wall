@@ -57,7 +57,7 @@ const Slider = ({label, value, range, onChange, note}) => {
       </span>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(+e.target.value)}
-        className="mt-1 h-6 w-full accent-[#ffd45a]" />
+        className="mt-1 h-6 w-full accent-gold" />
     </label>
   )
 }

@@ -1,0 +1,96 @@
+/**
+ * Zeal Interactive Services — our own showcase, for the company's socials.
+ * Event technology + gaming: VR, AR tables, interactive walls, AI photobooths, sensor games.
+ *
+ * Same physical bottle as Supradyn, with the company sticker over its label and cap.
+ * The sticker art is GENERATED: `node brand-assets/zeal/sticker/make-sticker.mjs`
+ * (it prints the label.px + ZEAL print box below), then
+ * `npm run generate-targets -- zeal`. Open with `?brand=zeal`.
+ */
+import {bottle} from '../supradyn/brand.js'
+
+// Sticker: light label, deep-green ink (logo #1C552A), teal + lime accents.
+const LIME = '#9BE23B'
+const MINT = '#3FD9A8'
+const GREEN_GLASS = 'rgba(10, 36, 18, 0.85)'
+
+export default {
+  id: 'zeal',
+  bottle, // the sticker sits exactly over the Supradyn label: same bottle, same band
+
+  label: {
+    source: 'brand-assets/zeal/sticker/body-wrap.png', // flat trim art, generated
+    px: {w: 4063, h: 1228},
+  },
+
+  targets: ['zeal-left', 'zeal-front', 'zeal-right'],
+
+  /** App UI colours (replace the gold / teal tokens of src/index.css). */
+  theme: {accent: LIME, teal: MINT},
+
+  experience: {
+    brand: 'Zeal',
+    product: 'Interactive Services',
+    maker: 'Zeal Interactive Services',
+    headline: "Let's go interactive.",
+    intro: 'Point your camera at the Zeal bottle and watch it come alive in 3D. Then snap a photo and share it.',
+    lookFor: 'the Zeal bottle',
+    heroImage: '', // add public/brands/zeal/hero.jpg (bottle with sticker), then 'hero.jpg'
+    logo: 'logo.png', // shown in the hero frame while there is no photo
+    photoName: 'zeal-ar.jpg',
+  },
+
+  nutrients: null,
+
+  animations: {
+    productOutline: {color: LIME},
+
+    typography: {
+      words: {
+        zeal: {
+          // Printed in the same Montserrat 800 the 3D letters use: lifts off its exact print.
+          print: {text: 'ZEAL', x0: 1546, x1: 2526, top: 536, base: 784},
+          show: true,
+          faceColor: '#1C552A', // the print's green, so the lifted letters match it
+          sideColor: LIME,
+          glowColor: LIME,
+          glow: 0.25,
+          slantDeg: 0,
+          letterHeight: 0.24,
+          radius: 1.4,
+          height: 0.1,
+          direction: 1,
+          speed: 0.3,
+          rounds: 1,
+          delay: 0.2,
+          loop: true,
+          loopPause: 1.5,
+        },
+      },
+    },
+
+    callouts: {
+      items: {
+        vr: {text: 'Virtual Reality', side: -1, y: 0.3},
+        ar: {text: 'AR Experiences', side: 1, y: 0.15},
+        games: {text: 'Interactive Games', side: -1, y: -0.15},
+        events: {text: 'Event Tech', side: 1, y: -0.3},
+      },
+      lineColor: LIME,
+      cardColor: GREEN_GLASS,
+      cardBorderColor: 'rgba(155, 226, 59, 0.55)',
+    },
+
+    tickerRings: {
+      rings: {
+        top: {text: 'VIRTUAL REALITY  •  AR TABLE  •  INTERACTIVE WALL  •  AI PHOTOBOOTH', y: 0.3, radius: 1.3, tiltDeg: 7, speed: 0.05, direction: -1},
+        bottom: {text: 'ZEAL INTERACTIVE SERVICES  •  EVENT TECH  •  GAMING', y: -0.28, radius: 1.42, tiltDeg: -5, speed: 0.04, direction: 1},
+      },
+      accentColor: LIME,
+      bandColor: 'rgba(10, 36, 18, 0.6)',
+    },
+
+    settle: {label: 'Glow', highlightColor: '#E9FFC2', deepColor: '#4FB83A', emberColor: '#F2FFE0'},
+    sparkle: {color1: LIME, color2: '#FFFFFF', color3: MINT},
+  },
+}

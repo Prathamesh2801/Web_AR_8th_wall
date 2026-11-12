@@ -1,5 +1,5 @@
 {
-  "imagePath": "image-targets/supradyn-bottle_luminance.png",
+  "imagePath": "brands/supradyn/targets/supradyn-bottle_luminance.png",
   "metadata": null,
   "name": "supradyn-bottle",
   "type": "CYLINDER",
@@ -26,6 +26,6 @@
     "thumbnailImage": "supradyn-bottle_thumbnail.png",
     "luminanceImage": "supradyn-bottle_luminance.png"
   },
-  "created": 1788779731064,
-  "updated": 1788779731064
+  "created": 1794462168128,
+  "updated": 1794462168128
 }
