@@ -10,8 +10,8 @@
  *   Exit       the whole entrance backwards, twice as fast
  *
  * Product-agnostic: the hologram is PRODUCT.profile lathed just outside the occluder (its
- * far side is hidden), and the readouts come from nutrientData.js (a new product swaps
- * that data). NORMAL blending throughout: additive light vanishes on a white table.
+ * far side is hidden). Readouts + verdict: the brand's `scan.readouts` / `scan.verdict`,
+ * else its nutrients (nutrientData.js). NORMAL blending throughout: additive light vanishes on a white table.
  */
 import * as THREE from 'three'
 
@@ -97,14 +97,15 @@ export const createScan = (cfg) => {
 
     // Readouts ride the line, centred on the bottle's front (beside it they ran off the
     // screen at close range); the verdict sits above the cap. On top, like a HUD.
-    const readouts = NUTRIENTS.map((n) => {
-      const card = makeCard(`${n.full} · ${n.amount}`)
+    const lines = cfg.readouts?.length ? cfg.readouts : NUTRIENTS.map(n => `${n.full} · ${n.amount}`)
+    const readouts = lines.map((text) => {
+      const card = makeCard(text)
       card.sprite.center.set(0.5, 0)
       card.sprite.material.depthTest = false
       card.sprite.visible = false
       return card
     })
-    const done = makeCard(`✓ Formula scanned · ${NUTRIENTS.length} nutrients`)
+    const done = makeCard(cfg.verdict || `✓ Formula scanned · ${NUTRIENTS.length} nutrients`)
     done.sprite.center.set(0.5, 0)
     done.sprite.material.depthTest = false
     done.sprite.visible = false

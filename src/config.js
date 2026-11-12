@@ -395,6 +395,10 @@ export const ANIMATIONS = {
     cardHeight: 0.085, // readouts, x label height (the verdict is 1.25x)
     cardColor: "rgba(4, 30, 40, 0.85)",
     cardBorderColor: "rgba(56, 232, 255, 0.6)",
+    // Brand content (optional): typed out as the line climbs, then the verdict above the
+    // cap. Without them: the brand's nutrients and "Formula scanned · N nutrients".
+    readouts: [],
+    verdict: "",
   },
 
   /**
@@ -456,7 +460,7 @@ const needs = {
   [AnimationId.CALLOUTS]: hasAny(ANIMATIONS[AnimationId.CALLOUTS].items),
   [AnimationId.TICKER]: hasAny(ANIMATIONS[AnimationId.TICKER].rings),
   [AnimationId.NUTRIENT_ORBIT]: hasNutrients,
-  [AnimationId.SCAN]: hasNutrients,
+  [AnimationId.SCAN]: hasNutrients || ANIMATIONS[AnimationId.SCAN].readouts.length > 0,
   [AnimationId.PLANTED]: hasNutrients,
 };
 for (const [id, ok] of Object.entries(needs)) if (!ok) ANIMATIONS[id].enabled = false;

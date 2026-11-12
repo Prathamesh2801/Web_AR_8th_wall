@@ -59,7 +59,8 @@ of the lens menu until then):
 | Typography "Lift & Spin" | `typography.words.<key>.print` = the word's box on the flat label (px) + `label.px` |
 | Callouts | `callouts.items` = `{key: {text, side: -1/1, y}}` |
 | Ticker | `tickerRings.rings` = `{key: {text, y, radius, tiltDeg, speed, direction}}` |
-| Orbit, Scan | `nutrients` |
+| Orbit | `nutrients` |
+| Scan | `scan.readouts` = `['line', ...]` (+ `scan.verdict`), or `nutrients` |
 | Planted | `nutrients` + `planted: {enabled: true}` + `public/brands/<id>/models/{soil,ginseng-root,grape}.glb` |
 
 Copy the shape from `src/brands/supradyn/brand.js`. Keep claims to what the pack says.

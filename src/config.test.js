@@ -17,10 +17,10 @@ test('supradyn keeps every effect with its content', async () => {
 })
 
 test('effects needing content the brand lacks are switched off', async () => {
-  const c = await load('?brand=zeal') // has words, callouts, ticker; no nutrients
+  const c = await load('?brand=zeal') // has words, callouts, ticker, scan readouts; no nutrients
   assert.equal(c.BRAND.id, 'zeal')
   assert.deepEqual(c.enabledAnimationIds(),
-    ['productOutline', 'typography', 'callouts', 'tickerRings', 'settle', 'spotlight', 'energy', 'sparkle'])
+    ['productOutline', 'typography', 'callouts', 'tickerRings', 'settle', 'spotlight', 'energy', 'scan', 'sparkle'])
   assert.equal(c.ANIMATIONS.sparkle.color1, '#9BE23B') // brand override merged
 })
 

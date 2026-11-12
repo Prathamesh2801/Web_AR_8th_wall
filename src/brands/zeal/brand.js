@@ -97,5 +97,14 @@ export default {
 
     settle: {label: 'Glow', highlightColor: '#E9FFC2', deepColor: '#4FB83A', emberColor: '#F2FFE0'},
     sparkle: {color1: LIME, color2: '#FFFFFF', color3: MINT},
+    // The sticker's 8 service badges, scanned off the bottle.
+    scan: {
+      readouts: ['Virtual Reality', 'VR Games', 'AR Experiences', 'Interactive Walls',
+        'AI Photobooth', 'Gesture Tech', 'Sensor Games', 'Robotics Hardware'],
+      verdict: '✓ Zeal scanned · 8 services',
+      color: MINT,
+      cardColor: GREEN_GLASS,
+      cardBorderColor: 'rgba(63, 217, 168, 0.6)',
+    },
   },
 }
