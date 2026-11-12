@@ -63,7 +63,7 @@ const profile = BOTTLE_MM.profile.map(([h, r]) => [
 
 export const PRODUCT = {
   mm: BOTTLE_MM,
-  label: BRAND.label, // flat artwork: {source, px: {w, h}}
+  label: {...BRAND.label, image: BRAND.label?.image && brandFile(BRAND.label.image)}, // flat artwork: {source, px, image (served)}
   profile,
   /** Bottle radius (label radii) at height y (label heights), clamped to base..cap. */
   radiusAt: (y) => {
@@ -134,6 +134,8 @@ export const AnimationId = {
   TYPOGRAPHY: "typography",
   CALLOUTS: "callouts",
   TICKER: "tickerRings",
+  LOGO_LIFT: "logoLift",
+  LABEL_SPIN: "labelSpin",
   PLANTED: "planted",
   NUTRIENT_ORBIT: "nutrientOrbit",
   SETTLE: "settle",
@@ -207,6 +209,72 @@ export const ANIMATIONS = {
 
     // Which printed words lift off, with their print box + knobs: per brand.
     words: {},
+  },
+
+  /**
+   * The brand mark printed on the label lifts off in 3D, glides up over the shoulder and
+   * turns on a light-ring above the cap; tap it to send it home. See logoLift.js.
+   */
+  [AnimationId.LOGO_LIFT]: {
+    enabled: true,
+    active: false,
+    group: "type",
+    label: "Logo",
+    delay: 0,
+
+    // Per brand: mark (SVG), print {cx, cy, size} mm on the trim label, patch (PNG) + patchMm.
+    mark: "",
+    print: null,
+    patch: "",
+    patchMm: 0,
+
+    holdMs: 300, // flat on its print before it pops
+    popMs: 800, // thickens into 3D and unbends off the curve
+    riseMs: 2400, // glide up over the shoulder to above the cap
+    exitSpeed: 1.6, // x faster back down
+    depthMm: 3, // thickness of the 3D logo
+    topScale: 1.6, // its size above the cap, x the print
+    hoverMm: 9, // gap between cap top and the logo's lower edge
+    spinSpeed: 0.3, // rev/s on the turntable
+    spinDirection: -1, // -1 / 1: which way it turns (seen from above: -1 = clockwise)
+    tiltDeg: 12, // leans back toward the viewer
+    bobMm: 1.5, // hover up/down
+    bobHz: 0.45,
+    replayAfterTap: 3000, // tap = it flies home to its print; rises again after this (ms; 0 = stays)
+    shine: 0.55, // flash as its face turns to you, 0..1
+    glow: 0.35, // faint glow in its colour
+    ring: 0.7, // light-ring on the cap
+    patchBrightness: 1, // the label patch under it, x the real paper it is matched to (camera)
+    printAzimuthDeg: 0, // calibration: rotate onto the print if it sits beside it
+    faceColor: "#1C552A",
+    sideColor: "#9BE23B",
+    glowColor: "#9BE23B",
+    ringColor: "#9BE23B",
+  },
+
+  /**
+   * The whole label comes loose and spins round the bottle, seamless, then lands back
+   * on its print. Any brand with a flat label image (`label.image`). See labelSpin.js.
+   */
+  [AnimationId.LABEL_SPIN]: {
+    enabled: true,
+    active: false,
+    group: "type",
+    label: "Spin",
+    delay: 0,
+
+    speed: 0.22, // rev/s while cruising
+    rounds: 1, // turns, then it lands back on the print; 0 = until the user leaves
+    loop: true, // after landing: pause, then spin again
+    loopPause: 1500, // ms resting on the real label between runs
+    holdMs: 350, // resting on the print before it starts to turn
+    spinUpMs: 1400, // to full speed
+    brakeMs: 2500, // the landing's length at cruise speed
+    fadeMs: 300, // in over the print / out after landing
+    lift: 0, // off the surface at full speed, x radius (0 = the label turns in place)
+    restLift: 0.006, // just proud of the print so it covers it, x radius
+    brightness: 0.05, // x the room light (cameraLight.js)
+    printAzimuthDeg: 0, // calibration, like Typography's: rotate the copy onto the print
   },
 
   /**
@@ -459,6 +527,8 @@ const needs = {
   [AnimationId.TYPOGRAPHY]: hasAny(ANIMATIONS[AnimationId.TYPOGRAPHY].words) && !!BRAND.label?.px,
   [AnimationId.CALLOUTS]: hasAny(ANIMATIONS[AnimationId.CALLOUTS].items),
   [AnimationId.TICKER]: hasAny(ANIMATIONS[AnimationId.TICKER].rings),
+  [AnimationId.LABEL_SPIN]: !!BRAND.label?.image,
+  [AnimationId.LOGO_LIFT]: !!(ANIMATIONS[AnimationId.LOGO_LIFT].mark && ANIMATIONS[AnimationId.LOGO_LIFT].print),
   [AnimationId.NUTRIENT_ORBIT]: hasNutrients,
   [AnimationId.SCAN]: hasNutrients || ANIMATIONS[AnimationId.SCAN].readouts.length > 0,
   [AnimationId.PLANTED]: hasNutrients,

@@ -26,6 +26,11 @@ export const RenderOrder = {
   /** Depth-only proxy. Must precede everything so its depth is available. */
   OCCLUDER: -1,
 
+  /** A patch hiding a print whose 3D copy is off the label (labelPatch.js): on the surface. */
+  LABEL_PATCH: 3,
+  /** Spin: the label copy, on the bottle's surface: every other layer draws over it. */
+  LABEL_SPIN: 4,
+
   /** Planted: soft contact shadows on the table/soil, under everything else. */
   PLANTED_SHADOW: 5,
 
@@ -43,6 +48,9 @@ export const RenderOrder = {
 
   /** Glow: the soft halo that everything else sits in front of. */
   SETTLE_AURA: 11,
+
+  /** Logo: light-ring on the cap top, under the logo's glow. */
+  LOGO_RING: 16,
 
   /** Product silhouette outline (depthTest off; drawn over the glow, under nodes). */
   PRODUCT_OUTLINE: 15,

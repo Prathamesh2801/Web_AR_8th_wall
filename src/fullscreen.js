@@ -7,11 +7,13 @@
  * Listens on the document, not the canvas: React's #root and XRExtras' layers sit above
  * the canvas, so a canvas-only listener could miss taps. Works anywhere, start screen
  * included, except on controls and inside [data-no-fullscreen] (the lens menu), so quick
- * taps on the shutter or the carousel never toggle it.
+ * taps on the shutter or the carousel never toggle it. A press that MOVED (spinning the
+ * start screen's 3D bottle, scrolling) is not a tap, so drags never toggle it either.
  * A refusal (e.g. the in-app browser a QR scanner opens) shows a short note instead of
  * failing silently.
  */
 const DOUBLE_TAP_MS = 350
+const TAP_SLOP_PX = 12 // finger travel still counted as a tap
 const CONTROLS = 'button, a, input, select, textarea, [role="button"], [data-no-fullscreen]'
 
 const el = document.documentElement
@@ -39,8 +41,13 @@ const toggle = () => {
 // iPhone Safari: no API at all, so don't even listen.
 if (request) {
   let last = 0
+  let downX = 0
+  let downY = 0
+  document.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY },
+    {capture: true, passive: true})
   document.addEventListener('pointerup', (e) => {
     if (!e.isPrimary || e.target.closest?.(CONTROLS)) return
+    if (Math.hypot(e.clientX - downX, e.clientY - downY) > TAP_SLOP_PX) { last = 0; return }
     if (e.timeStamp - last > DOUBLE_TAP_MS) { last = e.timeStamp; return }
     last = 0 // a third tap starts a new pair
     toggle()

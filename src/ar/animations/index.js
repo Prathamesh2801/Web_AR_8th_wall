@@ -14,6 +14,8 @@
 import {AnimationId} from '../../config'
 import {createCallouts} from '../callouts'
 import {createEnergy} from '../energy'
+import {createLabelSpin} from '../labelSpin'
+import {createLogoLift} from '../logoLift'
 import {createPlanted} from '../planted'
 import {createScan} from '../scan'
 import {createNutrientSystem} from '../nutrientSystem'
@@ -29,6 +31,8 @@ export const ANIMATION_FACTORIES = {
   [AnimationId.TYPOGRAPHY]: createTypography,
   [AnimationId.CALLOUTS]: createCallouts,
   [AnimationId.TICKER]: createTickerRings,
+  [AnimationId.LOGO_LIFT]: createLogoLift,
+  [AnimationId.LABEL_SPIN]: createLabelSpin,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
   [AnimationId.PLANTED]: createPlanted,
   [AnimationId.SETTLE]: createSettleEffect,

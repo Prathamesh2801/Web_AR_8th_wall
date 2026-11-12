@@ -5,7 +5,10 @@ brand can't appear there): a removable sticker covers the label, a round one cov
 "Supradyn" on the cap. Peel them off and it's the client's bottle again. The app side
 is `src/brands/zeal/brand.js`; open it with `?brand=zeal`.
 
+- **`IDEAS.md`: ideas board** (next Elements styles, Meshy prompts, what's built).
 - `Zeal_logo.png`: the logo (green #1C552A on white).
+- `sticker/make-logo-assets.mjs`: logo traced to `public/brands/zeal/logo-mark.svg` + the
+  label patch under it (`logo-patch.png`) for the Typography "Logo" style.
 - Sticker look: light label (`#F6F8F3`), deep-green ink (logo `#1C552A`, text `#123D1F`),
   teal `#0B6E63` (links to the bottle's `#05575F` plastic), lime `#8CCB3A` accent lines.
   Green bands top and bottom frame it against the plastic and hide a slightly off cut.

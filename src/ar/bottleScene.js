@@ -91,6 +91,8 @@ export const createBottleScene = ({onSelect} = {}) => {
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1
     raycaster.setFromCamera(pointer, camera)
     const pick = raycaster.intersectObjects(pickables, false)[0]?.object.userData.pick
+    // A function = the animation's own tap action (e.g. the Logo's flip), not a selection.
+    if (typeof pick === 'function') return pick()
     // Only notify outward; the store drives setSelected back in, so every path that
     // changes the selection goes through one place.
     if (pick) onSelect?.(pick)

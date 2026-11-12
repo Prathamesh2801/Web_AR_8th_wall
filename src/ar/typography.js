@@ -45,7 +45,7 @@ const band = (t, centre) => clamp01(1 - Math.abs(t - centre) / T.shimmerWidth)
 const TAU = Math.PI * 2
 
 /** Greyscale studio-sphere matcap: key highlight top-left, dark rim. Tinted per material. */
-const makeMatcap = () => {
+export const makeMatcap = () => {
   const c = document.createElement('canvas')
   c.width = c.height = 256
   const ctx = c.getContext('2d')
@@ -63,7 +63,7 @@ const makeMatcap = () => {
 }
 
 /** Soft round glow, tinted per sprite. */
-const makeGlow = () => {
+export const makeGlow = () => {
   const c = document.createElement('canvas')
   c.width = c.height = 128
   const ctx = c.getContext('2d')

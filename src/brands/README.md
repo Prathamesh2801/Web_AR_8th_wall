@@ -57,6 +57,8 @@ of the lens menu until then):
 | Effect | Needs, in `animations` / brand file |
 |---|---|
 | Typography "Lift & Spin" | `typography.words.<key>.print` = the word's box on the flat label (px) + `label.px` |
+| Typography "Logo" | `logoLift: {mark, print: {cx, cy, size} (mm on the trim label), patch, patchMm}`: see zeal (`brand-assets/zeal/sticker/make-logo-assets.mjs` makes mark + patch) |
+| Typography "Spin" | `label.image` = the label as it physically is (~2048 px JPG in `public/brands/<id>/`, sides trimmed); `label.imageBleedMm` if it extends past the art top/bottom (an uncut sticker) |
 | Callouts | `callouts.items` = `{key: {text, side: -1/1, y}}` |
 | Ticker | `tickerRings.rings` = `{key: {text, y, radius, tiltDeg, speed, direction}}` |
 | Orbit | `nutrients` |

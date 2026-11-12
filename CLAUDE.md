@@ -37,6 +37,9 @@ src/ar/               engine + three.js. NO React imports in this folder.
   productOutline.js     animation: traces the bottle's silhouette on detection (default on)
   typography.js         animation A01: Supradyn + GINSENG lift off their print in 3D, revolve N rounds, land back (off until chosen)
   tickerRings.js        Typography style "Ticker": tilted text bands round the bottle, scrolling opposite ways; unfold in / fold out
+  logoLift.js           Typography style "Logo": the printed brand mark (traced SVG) lifts off its print in 3D (bent->flat morph), a label patch hides the print, glides over the shoulder, turntable above the cap on a light-ring; tap = flies home to its print, rises again
+  labelPatch.js         hides a print while its 3D copy is off the label (the Logo): label art without it, colour matched live to the real paper in the camera image (cameraLight.paperAt)
+  labelSpin.js          Typography style "Spin": the whole label (brand's label.image, wrapped 360°) fades in over its print, spins round seamlessly, brakes onto a whole turn and lands back on the print
   callouts.js           Typography style "Callouts": dot -> leader line -> card, text typed in; screen-left/right of the bottle, shrink to fit; exits in reverse
   liveColor.js          applies a config colour only when it changed (live tuning without per-frame parsing)
   planted.js            Elements style "Planted": bottle planted in a soil collar (360°), ginseng roots surface + lie on it, grape berries drop/bounce/roll; light matched from the camera (cameraLight.js), crumbling soil edge, contact shadows, grain
@@ -44,7 +47,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   energy.js             Effects style "Energy": arcs on the bottle's visible edges (ribbons on PRODUCT.profile, rebuilt in place), charge climbs, surges send shockwave rings
   scan.js               Effects style "Scan": scan line climbs/descends revealing a hologram grid (lathed profile), laser sheet, nutrient readouts type out, "Formula scanned" verdict
   sparkle.js            Effects style "Sparkle": cap flash, brand-colour stars burst + swirl + settle into orbit (all motion in the shader); exit rewinds time
-  cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 16 px), for lit effects
+  cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 64 px, upright), for lit effects; paperAt() = the real paper colour under a screen box
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty

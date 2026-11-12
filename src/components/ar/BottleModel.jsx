@@ -153,7 +153,6 @@ export const BottleModel = ({className = ''}) => {
   return (
     <div
       ref={host}
-      data-no-fullscreen // drags here spin the bottle, not the screen mode
       role="img"
       aria-label={`${EXPERIENCE.brand} ${EXPERIENCE.product}, 3D`}
       className={`relative cursor-grab touch-pan-y active:cursor-grabbing ${className}`}

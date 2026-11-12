@@ -24,6 +24,10 @@ export default {
   label: {
     source: 'brand-assets/zeal/sticker/body-wrap.png', // flat trim art, generated
     px: {w: 4063, h: 1228},
+    // What is PHYSICALLY on the bottle, for Spin: the print file with its top/bottom bleed
+    // (the sticker went on uncut), sides trimmed so the 360° wrap closes. public/brands/zeal/.
+    image: 'label-wrap.jpg',
+    imageBleedMm: 3, // the image extends this far past the art's top and bottom edges
   },
 
   targets: ['zeal-left', 'zeal-front', 'zeal-right'],
@@ -97,6 +101,19 @@ export default {
 
     settle: {label: 'Glow', highlightColor: '#E9FFC2', deepColor: '#4FB83A', emberColor: '#F2FFE0'},
     sparkle: {color1: LIME, color2: '#FFFFFF', color3: MINT},
+    // The Z mark printed at the top of the front (make-sticker.mjs: 17 mm box at x 77.5,
+    // y 4.4) lifts off in 3D. Mark traced from Zeal_logo.png (same 1000 px frame as the
+    // printed image); patch = that spot of the label without the logo, feathered.
+    logoLift: {
+      mark: 'logo-mark.svg',
+      print: {cx: 86, cy: 12.9, size: 17},
+      patch: 'logo-patch.png',
+      patchMm: 19.4,
+      faceColor: '#1C552A',
+      sideColor: LIME,
+      glowColor: LIME,
+      ringColor: LIME,
+    },
     // The sticker's 8 service badges, scanned off the bottle.
     scan: {
       readouts: ['Virtual Reality', 'VR Games', 'AR Experiences', 'Interactive Walls',

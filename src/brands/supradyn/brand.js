@@ -50,6 +50,7 @@ export default {
   label: {
     source: 'brand-assets/supradyn/label/supradyn-60-label-source.png',
     px: {w: 4064, h: 1229},
+    image: 'label.jpg', // served copy (public/brands/supradyn/, 2048 px), for Spin
   },
 
   /** Target names (public/brands/supradyn/targets/<name>.json): left, front, right crops. */
