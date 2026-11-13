@@ -416,8 +416,9 @@ export const ANIMATIONS = {
     label: "Photo Burst",
     delay: 0,
 
-    // Per brand: [{file (public/brands/<id>/...), caption?}]
+    // Per brand: [{file (public/brands/<id>/...), caption?}]; any shape (never cropped)
     photos: [],
+    photoMm: 32, // a print's picture area = this square's (wide / tall shots keep their shape)
 
     // Entry: one print per staggerMs flies out of the cap and develops.
     leadMs: 400, // before the first print

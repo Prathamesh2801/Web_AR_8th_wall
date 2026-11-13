@@ -13,7 +13,7 @@ npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
 npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
-node scripts/prepare-photos.mjs <out-dir> <photo...>  # event photos -> square 900 px WebP prints for Photo Burst (attention crop: keeps people in landscape shots), named event-01.. in the given order
+node scripts/prepare-photos.mjs <out-dir> <photo...>  # event photos -> Photo Burst prints: whole photo, never cropped (each polaroid takes its shape), longest side 1000 px WebP, named event-01.. in the given order
 node scripts/optimize-model.mjs <in.glb> <out.glb> [tris=0] [px] [error] [clean=3] [erode=0]  # raw Meshy GLB (~20 MB) -> web GLB (~2 MB): colour map only (WebP), FULL mesh, meshopt (simplifying made smooth models lumpy)
 ```
 
@@ -32,7 +32,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   startAR.js            loads targets, configures XR8, registers pipeline modules
   imageTargetPipelineModule.js   image events -> lead target -> bottleScene + store
   leadTarget.js         picks which of the overlapping label crops drives the pose (+ test)
-  bottleScene.js        anchor, pose smoothing, occlusion, runs animations, tap picking; a press that moves = swipe -> active effects' optional drag(dx)/release()
+  bottleScene.js        anchor, pose smoothing, occlusion, runs animations, tap picking; a press that moves = swipe -> active effects' optional drag(dx)/release(); warms every built effect while hidden (textures uploaded + compileAsync) so switching to one never stalls
   occlusionProxy.js     invisible depth model of the bottle (lathed PRODUCT.profile)
   renderOrder.js        fixed draw order for every transparent layer
   animations/index.js   id -> factory registry

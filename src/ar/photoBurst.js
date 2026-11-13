@@ -13,6 +13,7 @@
  *           readable on its white strip; the others dim. Tap it again = back; another = swap
  *   Exit    reverse: prints un-develop and drop back into the cap, last one first
  *
+ * Each print takes its photo's own shape (cardLayout: never cropped, equal picture area).
  * Photos + captions are brand content (cfg.photos: [{file, caption}], files preloaded by
  * assets.js). Cards are unlit art, brightness follows the room (cameraLight.js); they are
  * opaque, so only the shadows and the flash need a renderOrder. update() allocates nothing.
@@ -34,53 +35,61 @@ const backOut = t => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2
 const lerp = (a, b, t) => a + (b - a) * t
 const wrapN = (k, n) => ((((k + n / 2) % n) + n) % n) - n / 2 // into [-n/2, n/2)
 
-// A polaroid, mm: a SQUARE photo (event shots are landscape: 4:5 cut off two thirds),
-// a thin border, the thick caption strip at the bottom.
-const P = {photoW: 32, photoH: 32, side: 3, top: 3, strip: 10}
-const CARD_W = P.photoW + 2 * P.side
-const CARD_H = P.photoH + P.top + P.strip
-// The photo's rectangle in UV (0,0 = bottom left), for the develop shader.
-const PHOTO_UV = [P.side / CARD_W, P.strip / CARD_H, (P.side + P.photoW) / CARD_W, (P.strip + P.photoH) / CARD_H]
+// A polaroid, mm: the photo in ITS OWN shape (landscape, portrait or square, never
+// cropped: the shots show real setups, a crop cut the service out) with the same picture
+// AREA as a photoMm square, so a wide shot isn't bigger than a square one; a thin border,
+// the thick caption strip at the bottom.
+const BORDER = 3
+const STRIP = 10
+// Canvas resolution. 14 read blurry on a phone once tapped to the front (a ~400 px canvas
+// stretched over ~600 device px); 28 stays sharper than the screen. 8 prints = ~60 MB of
+// GPU textures with mipmaps: fine on current phones.
+const PX_PER_MM = 28
 const HAND = '"Segoe Print", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive'
 
-/** The card's art: paper, the photo (cover-fit, drawn in once loaded), the caption. */
-const makeCard = (url, caption, paper) => {
-  const W = 512
-  const H = Math.round((W * CARD_H) / CARD_W)
-  const k = W / CARD_W
+const cardLayout = (aspect, photoMm) => {
+  const a = Math.min(Math.max(aspect || 1, 0.45), 2.4) // beyond: letterboxed on the paper
+  const pw = photoMm * Math.sqrt(a)
+  const ph = photoMm / Math.sqrt(a)
+  const w = pw + 2 * BORDER
+  const h = ph + BORDER + STRIP
+  // The photo's rectangle in UV (0,0 = bottom left), for the develop shader.
+  return {pw, ph, w, h, uv: [BORDER / w, STRIP / h, (BORDER + pw) / w, (STRIP + ph) / h]}
+}
+
+/** The card's art: paper, the whole photo (contain-fit), the caption. */
+const makeCard = (img, caption, paper, L) => {
+  const W = Math.round(L.w * PX_PER_MM)
+  const H = Math.round(L.h * PX_PER_MM)
+  const k = W / L.w
   const c = document.createElement('canvas')
   c.width = W
   c.height = H
   const ctx = c.getContext('2d')
+  const px = BORDER * k, py = BORDER * k, pw = L.pw * k, ph = L.ph * k
+  ctx.fillStyle = paper
+  ctx.fillRect(0, 0, W, H)
+  const s = Math.min(pw / img.width, ph / img.height) // contain: the whole photo
+  const dw = img.width * s, dh = img.height * s
+  ctx.drawImage(img, px + (pw - dw) / 2, py + (ph - dh) / 2, dw, dh)
+  if (caption) {
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    for (let size = Math.round(STRIP * k * 0.5); size > 10; size -= 2) {
+      ctx.font = `600 ${size}px ${HAND}`
+      if (ctx.measureText(caption).width <= W - 2 * px) break
+    }
+    // A same-colour outline thickens it: Android's handwriting font is hairline-thin.
+    const y = py + ph + (H - py - ph) / 2
+    ctx.fillStyle = ctx.strokeStyle = '#1d2924'
+    ctx.lineWidth = k * 0.12
+    ctx.lineJoin = 'round'
+    ctx.strokeText(caption, W / 2, y)
+    ctx.fillText(caption, W / 2, y)
+  }
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace
   tex.anisotropy = 8
-  const px = P.side * k, py = P.top * k, pw = P.photoW * k, ph = P.photoH * k
-  const paint = (img) => {
-    ctx.fillStyle = paper
-    ctx.fillRect(0, 0, W, H)
-    ctx.fillStyle = '#d9d3c3'
-    ctx.fillRect(px, py, pw, ph)
-    if (img) {
-      const s = Math.max(pw / img.width, ph / img.height) // cover
-      const sw = pw / s, sh = ph / s
-      ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, px, py, pw, ph)
-    }
-    if (caption) {
-      let size = Math.round(P.strip * k * 0.5)
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      for (; size > 10; size -= 2) {
-        ctx.font = `600 ${size}px ${HAND}`
-        if (ctx.measureText(caption).width <= W - 2 * px) break
-      }
-      ctx.fillStyle = '#23302a'
-      ctx.fillText(caption, W / 2, py + ph + (H - py - ph) / 2)
-    }
-    tex.needsUpdate = true
-  }
-  paint(null)
-  new THREE.ImageLoader().load(url, paint, undefined, err => console.warn('[AR] photo failed', url, err))
   return tex
 }
 
@@ -146,16 +155,35 @@ export const createPhotoBurst = (cfg) => {
     if (!(R > 0) || !(H > 0) || !cfg.photos?.length) return false
     const u = H / PRODUCT.mm.labelHeight
     const yTop = PRODUCT.profile.at(-1)[0] * H
-    const w = CARD_W * u
-    const h = CARD_H * u
-
-    // A slightly bent print (paper never lies dead flat): z dips toward the sides.
-    const geo = new THREE.PlaneGeometry(w, h, 12, 1)
-    const pos = geo.attributes.position
-    for (let i = 0; i < pos.count; i++) pos.setZ(i, -0.06 * w * (pos.getX(i) / (w / 2)) ** 2)
-    pos.needsUpdate = true
-    const shadowGeo = new THREE.PlaneGeometry(w * 1.25, h * 1.2)
     const shadowTex = makeShadowTex()
+
+    // A card takes its photo's shape, so it is built once the image is in (preloaded by
+    // assets.js: in practice the same frame). Until then the item just isn't shown.
+    const dress = (entry, ph, img) => {
+      const L = cardLayout(img.width / img.height, cfg.photoMm)
+      const w = L.w * u
+      const h = L.h * u
+      // A slightly bent print (paper never lies dead flat): z dips toward the sides.
+      const geo = new THREE.PlaneGeometry(w, h, 12, 1)
+      const pos = geo.attributes.position
+      for (let i = 0; i < pos.count; i++) pos.setZ(i, -0.04 * Math.min(w, h) * (pos.getX(i) / (w / 2)) ** 2)
+      pos.needsUpdate = true
+      entry.dev.uRect.value.set(...L.uv)
+      const mat = new THREE.MeshBasicMaterial({map: makeCard(img, ph.caption ?? '', cfg.paperColor, L)})
+      patchDevelop(mat, entry.dev)
+      const front = new THREE.Mesh(geo, mat)
+      const backMat = new THREE.MeshBasicMaterial({color: cfg.paperColor})
+      const back = new THREE.Mesh(geo, backMat)
+      back.rotation.y = Math.PI
+      const shadow = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.2, h * 1.15), new THREE.MeshBasicMaterial({
+        map: shadowTex, transparent: true, opacity: 0, depthWrite: false,
+      }))
+      shadow.renderOrder = RenderOrder.PHOTO_SHADOW
+      shadow.position.set(w * 0.05, -h * 0.05, -0.08 * Math.min(w, h))
+      entry.card.add(front, back, shadow)
+      front.userData.pick = () => select(entry)
+      Object.assign(entry, {front, mat, backMat, shadow})
+    }
 
     const flash = new THREE.Sprite(new THREE.SpriteMaterial({
       map: makeGlow(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -165,24 +193,13 @@ export const createPhotoBurst = (cfg) => {
     root.add(flash)
 
     const items = cfg.photos.map((ph, i) => {
-      const dev = {uDev: {value: 0}, uRect: {value: new THREE.Vector4(...PHOTO_UV)}}
-      const mat = new THREE.MeshBasicMaterial({map: makeCard(brandFile(ph.file), ph.caption ?? '', cfg.paperColor)})
-      patchDevelop(mat, dev)
-      const front = new THREE.Mesh(geo, mat)
-      const backMat = new THREE.MeshBasicMaterial({color: cfg.paperColor})
-      const back = new THREE.Mesh(geo, backMat)
-      back.rotation.y = Math.PI
-      const shadow = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({
-        map: shadowTex, transparent: true, opacity: 0, depthWrite: false,
-      }))
-      shadow.renderOrder = RenderOrder.PHOTO_SHADOW
-      shadow.position.set(w * 0.06, -h * 0.05, -0.08 * w)
       const card = new THREE.Group()
       card.rotation.order = 'YXZ'
-      card.add(front, back, shadow)
+      card.visible = false
       root.add(card)
       const entry = {
-        card, front, mat, backMat, shadow, dev,
+        card, front: null, mat: null, backMat: null, shadow: null, // dress() fills these
+        dev: {uDev: {value: 0}, uRect: {value: new THREE.Vector4()}},
         delay: cfg.leadMs + i * cfg.staggerMs,
         p: 0, // 0 in the cap .. 1 in the fan (entrance clock)
         s: 0, // 0 in the fan .. 1 in front of the bottle
@@ -192,7 +209,8 @@ export const createPhotoBurst = (cfg) => {
         born: false, // its click has played
         lastK: 0, // its fan position last frame (wrap-seam jump)
       }
-      front.userData.pick = () => select(entry)
+      new THREE.ImageLoader().load(brandFile(ph.file), img => dress(entry, ph, img), undefined,
+        err => console.warn('[AR] photo failed', ph.file, err))
       return entry
     })
     built = {R, H, u, yTop, items, flash}
@@ -250,7 +268,7 @@ export const createPhotoBurst = (cfg) => {
       it.s = clamp01(it.s + ((it === selected ? 1 : -1) * dt) / cfg.selectMs)
       const p = it.p
       const s = easeInOut(it.s)
-      const visible = p > 0 || s > 0
+      const visible = (p > 0 || s > 0) && !!it.front // not until its card is dressed
       it.card.visible = visible
       if (!visible) { it.fresh = true; it.born = false; continue }
 
@@ -327,7 +345,7 @@ export const createPhotoBurst = (cfg) => {
     restartEntrance: () => { lastMs = null; t = 0; leaving = false; selected = null; slideVel = 0 },
     exit: () => { leaving = true },
     isExited: () => !built || (leaving && t <= 0 && built.items.every(it => it.p <= 0 && it.s <= 0)),
-    getPickables: () => (built ? built.items.filter(it => (it.p > 0.5 && it.vis > 0.5) || it.s > 0.5).map(it => it.front) : []),
+    getPickables: () => (built ? built.items.filter(it => it.front && ((it.p > 0.5 && it.vis > 0.5) || it.s > 0.5)).map(it => it.front) : []),
     setUserSpeed: v => { speed = v },
     // Horizontal swipe (bottleScene): dx = finger move, x screen width. Finger right = right.
     drag: (dx) => {

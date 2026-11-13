@@ -36,14 +36,14 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - VR.
 - Needs: one 360° photo or video (a phone panorama works), equirectangular.
 
-### 4. Photo Burst (no Meshy): BUILT 2026-11-13, 10 real event photos in
+### 4. Photo Burst (no Meshy): BUILT 2026-11-13, 8 real event photos in (any shape)
 - `src/ar/photoBurst.js`: polaroids shoot out of the cap one by one (soft shutter click +
   haptic, lime cap flash), develop in flight (cream -> warm -> colour), spring into a fan
   BEHIND the bottle (peacock / hand of cards, turned to the viewer, 7 shown, more wrap round);
   swipe slides them, a flick coasts and settles on a slot; tap = to the front with its
   caption, tap another = swap; exit = they un-develop and drop back into the cap.
-- Photos: `node scripts/prepare-photos.mjs public/brands/zeal/photos <files...>` (square: the
-  shots are landscape, a 4:5 print kept a third), then list them in `animations.photoBurst.photos`
+- Photos: `node scripts/prepare-photos.mjs public/brands/zeal/photos <files...>` (never
+  cropped: each polaroid takes its photo's shape, same picture area), then list them in `animations.photoBurst.photos`
   in brand.js (`[{file, caption}]`; captions = the setup, no client names).
 - Polaroid-style photos of real Zeal events fly out of the cap, fan into an arc round the
   bottle and float; tap one to bring it to the front.

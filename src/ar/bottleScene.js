@@ -100,9 +100,41 @@ export const createBottleScene = ({onSelect} = {}) => {
     if (pick) onSelect?.(pick)
   }
 
-  const addToScene = (scene, xrCamera, xrCanvas) => {
+  // --- Warm-up -----------------------------------------------------------------------
+  // The first frame that showed an effect stalled: three compiles its shaders and uploads
+  // its textures on that frame (Photo Burst: 8 large prints; Tech Orbit: 5 models). Each
+  // built effect is prepared while still hidden instead: textures uploaded, shaders
+  // compiled in parallel where the browser can (compileAsync). One effect per check, and
+  // again whenever it gains content later (models / prints load async).
+  let renderer = null
+  let xrScene = null
+  let warmTick = 0
+  const TEX_KEYS = ['map', 'matcap', 'alphaMap']
+  let drawables = 0
+  const countDrawable = (o) => { if (o.isMesh || o.isSprite || o.isPoints || o.isLine) drawables++ }
+  const uploadTextures = (o) => {
+    const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : []
+    for (const m of mats) for (const k of TEX_KEYS) if (m[k]?.isTexture) renderer.initTexture(m[k])
+  }
+  const warmUp = () => {
+    if (!renderer || !camera || ++warmTick % 20) return
+    for (const a of animations) {
+      if (pending.has(a)) continue
+      drawables = 0
+      a.instance.root.traverse(countDrawable)
+      if (drawables === a.warmed) continue
+      a.warmed = drawables
+      a.instance.root.traverse(uploadTextures)
+      renderer.compileAsync(a.instance.root, camera, xrScene).catch(() => {})
+      return
+    }
+  }
+
+  const addToScene = (scene, xrCamera, xrCanvas, xrRenderer) => {
     camera = xrCamera
     canvas = xrCanvas
+    renderer = xrRenderer ?? null
+    xrScene = scene
     // Only Planted's models are lit (and they bring their own key + sky light); a full-
     // strength ambient on top flattened them, so this is just a fill.
     scene.add(new THREE.AmbientLight(0xffffff, 0.35))
@@ -173,6 +205,7 @@ export const createBottleScene = ({onSelect} = {}) => {
   const update = (timeMs) => {
     const dt = lastFrameMs === null ? 0 : Math.min(timeMs - lastFrameMs, 100)
     lastFrameMs = timeMs
+    warmUp()
 
     // Nothing on screen: skip the work. Animations clamp their own dt, so a short
     // dropout resumes in place.

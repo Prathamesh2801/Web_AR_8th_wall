@@ -1,12 +1,13 @@
 /**
- * Event photos -> Photo Burst prints: square (the polaroid's picture), 900 px, WebP.
+ * Event photos -> Photo Burst prints: the WHOLE photo (never cropped), longest side
+ * 2048 px, WebP q92 (1000 px / q80 read blurry on a phone; they're preloaded + cached, so
+ * size costs only start-screen time).
  *
  *   node scripts/prepare-photos.mjs <out-dir> <photo> [photo ...]
  *
  * Writes <out-dir>/event-01.webp, event-02.webp, ... in the order given (= the fan order).
- * Square, not 4:5: nearly every event shot is landscape (16:9 or wider), and a tall crop
- * kept only a third of it. The crop is sharp's "attention" strategy (people, faces,
- * saturated detail), not the centre, so the subject survives a wide frame.
+ * Landscape, portrait and square all welcome: each polaroid takes its photo's own shape
+ * (photoBurst.js cardLayout). Very wide/tall shots (beyond 2.4:1) get paper bars.
  */
 import {mkdirSync, statSync} from 'node:fs'
 import {join} from 'node:path'
@@ -21,9 +22,9 @@ if (!out || !photos.length) {
 mkdirSync(out, {recursive: true})
 for (const [i, src] of photos.entries()) {
   const file = join(out, `event-${String(i + 1).padStart(2, '0')}.webp`)
-  await sharp(src).rotate() // EXIF orientation (phone photos)
-    .resize(900, 900, {fit: 'cover', position: sharp.strategy.attention})
-    .webp({quality: 80})
+  const info = await sharp(src).rotate() // EXIF orientation (phone photos)
+    .resize(2048, 2048, {fit: 'inside', withoutEnlargement: true})
+    .webp({quality: 92})
     .toFile(file)
-  console.log(`${src} -> ${file} (${(statSync(file).size / 1024).toFixed(0)} KB)`)
+  console.log(`${src} -> ${file} ${info.width}x${info.height} (${(statSync(file).size / 1024).toFixed(0)} KB)`)
 }

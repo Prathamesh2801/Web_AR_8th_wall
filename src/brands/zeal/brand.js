@@ -138,23 +138,21 @@ export default {
           pitch: 'Custom robots for live installations'},
       ],
     },
-    // Elements "Photo Burst": real Zeal event work as polaroids. Files made with
-    // scripts/prepare-photos.mjs (square, attention crop; originals in
-    // brand-assets/zeal/photos/events/, local). Order = fan order: the middle 7 show at
-    // rest (04-08 around the centre), the rest come round on a swipe. Captions describe
-    // the setup only, no client names: edit freely.
+    // Elements "Photo Burst": real Zeal event work as polaroids, each in its photo's own
+    // shape (never cropped). Files made with scripts/prepare-photos.mjs (originals in
+    // brand-assets/zeal/photos/events/, local). Order = fan order: the middle 7 show at rest
+    // (05 at the centre), 01 comes round on a swipe. Captions name the service shown, no
+    // client names: edit freely.
     photoBurst: {
       photos: [
-        {file: 'photos/event-01.webp', caption: '3D plant model + live screen'},
-        {file: 'photos/event-02.webp', caption: 'Touch-reactive map wall'},
-        {file: 'photos/event-03.webp', caption: 'Interactive e-mobility table'},
-        {file: 'photos/event-04.webp', caption: 'VR interactive zone'},
-        {file: 'photos/event-05.webp', caption: 'Sensor game table'},
-        {file: 'photos/event-06.webp', caption: 'Beachside surf game wall'},
-        {file: 'photos/event-07.webp', caption: 'Touch pipeline wall'},
-        {file: 'photos/event-08.webp', caption: 'Interactive scale model'},
-        {file: 'photos/event-09.webp', caption: 'Smart factory model'},
-        {file: 'photos/event-10.webp', caption: 'AI avatar experience'},
+        {file: 'photos/event-01.webp', caption: 'Smart factory scale model'},
+        {file: 'photos/event-02.webp', caption: 'Interactive scale models'},
+        {file: 'photos/event-03.webp', caption: 'VR interactive zone'},
+        {file: 'photos/event-04.webp', caption: 'Interactive projection floor'},
+        {file: 'photos/event-05.webp', caption: 'Interactive touch wall'},
+        {file: 'photos/event-06.webp', caption: 'Sensor game table'},
+        {file: 'photos/event-07.webp', caption: 'Virtual cricket'},
+        {file: 'photos/event-08.webp', caption: 'Beachside surf game'},
       ],
     },
     // The sticker's 8 service badges, scanned off the bottle.

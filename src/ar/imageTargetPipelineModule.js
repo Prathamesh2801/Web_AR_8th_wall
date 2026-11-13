@@ -81,11 +81,11 @@ export const createImageTargetPipelineModule = (targetNames) => {
     name: 'bottle-image-target',
 
     onStart: ({canvas}) => {
-      const {scene, camera} = XR8.Threejs.xrScene()
+      const {scene, camera, renderer} = XR8.Threejs.xrScene()
       bottleScene = createBottleScene({
         onSelect: nutrient => trackingStore.setSelectedNutrient(nutrient),
       })
-      bottleScene.addToScene(scene, camera, canvas)
+      bottleScene.addToScene(scene, camera, canvas, renderer)
       trackingStore.setScene(bottleScene)
 
       // Required so the engine drives the three.js camera.
