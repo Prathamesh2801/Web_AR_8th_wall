@@ -10,9 +10,13 @@ robotics hardware, event tech).
 
 Today Zeal has NO Elements styles: Supradyn's Orbit and Planted need nutrient data, so they
 switch themselves off for Zeal. Agreed set (2026-11-12): all five below. Suggested first
-three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real work).V
+three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real work).
 
-### 1. Tech Orbit (Meshy models)
+### 1. Tech Orbit (Meshy models): BUILT; models 1 of 5 (VR headset)
+- Built 2026-11-12 (`src/ar/techOrbit.js`): the 8 printed badges lift off as 3D coins onto
+  one evenly spaced orbit ring (drawn track, names on the near side); tap = the coin rises
+  onto a glass info board above the cap (pitch from `brand.js`), tap again = back. To use Meshy models: put the GLB in
+  `public/brands/zeal/models/` and add `model: 'models/<name>.glb'` to that item.
 - Small 3D service objects circle the bottle on tilted rings, passing behind it (occluder):
   VR headset, game controller, robot, photobooth camera, pointing hand (gesture).
 - Tap one: a card with the service name + a one-line pitch (reuse the nutrient-card pattern).
@@ -46,12 +50,25 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 
 ## Meshy (meshy.ai) notes
 
+- Colour rule (2026-11-13, after the first headset): REAL product colours (white / black
+  tech), brand on the DETAILS. An all-green model on the green board + teal bottle read as a
+  dark blob. White body = reads as real tech and pops; lime #9BE23B = thin accent lines;
+  deep green #1C552A = soft parts (straps, cushions, grips); black gloss = screens/visors.
 - One shared style line on every prompt so the set matches:
-  `low-poly stylized, smooth matte plastic, deep green #1C552A with lime #9BE23B accents,
-  clean simple shapes, rounded edges, no text, no logos, centred, plain background`
+  `clean premium consumer-tech product design, glossy white plastic body, thin bright lime
+  green accent lines, dark forest green soft parts, black gloss screens, rounded friendly
+  shapes, soft studio lighting, isolated on a plain light grey background, no text, no logos`
 - Text-to-3D is enough for these (no photos needed). Generate 2–4 variants, pick the cleanest.
-- Export GLB. Then in the repo: simplify + meshopt with `npx @gltf-transform/cli` and keep
-  each under ~300 KB (as for Supradyn's Planted models), into `public/brands/zeal/models/`.
+- Meshy settings that worked (VR headset, 2026-11-12): symmetry ON, topology triangle,
+  ~10k polycount, texture ON, **PBR OFF** (the app shades models with a matcap, so the PBR
+  maps are thrown away anyway).
+- Pipeline: download GLB -> `brand-assets/zeal/models/<name>-source.glb` (local only,
+  git-ignored) -> `node scripts/optimize-model.mjs brand-assets/zeal/models/<name>-source.glb
+  public/brands/zeal/models/<name>.glb 16000 1536` (VR headset v2, white: 17.9 MB -> 372 KB;
+  2048 px looked identical on the board, 1024 px / 12k triangles were visibly soft) -> add
+  `model: 'models/<name>.glb'` to the item in `src/brands/zeal/brand.js`. Size in the scene:
+  `techOrbit.modelScale` (TUNE).
+- Models: VR headset DONE (`vr-headset.glb`, v2 white, 2026-11-13). To do: controller, robot, camera, hand.
 - Draft prompts (style line appended to each):
   - VR headset: `compact VR headset with a soft strap`
   - Game controller: `modern game controller, chunky buttons`
@@ -66,4 +83,5 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - Typography: Lift & Spin (ZEAL), **Logo** (Z mark lifts off, turntable over the cap, tap =
   home), Spin (whole label), Callouts, Ticker.
 - Effects: Glow, Spotlight, Energy, Scan (8 services), Sparkle.
+- Elements: Tech Orbit (badge coins; Meshy models can replace them per item).
 - Start screen: 3D bottle built from the sticker art.

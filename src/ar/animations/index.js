@@ -23,6 +23,7 @@ import {createProductOutline} from '../productOutline'
 import {createSettleEffect} from '../settleEffect'
 import {createSparkle} from '../sparkle'
 import {createSpotlight} from '../spotlight'
+import {createTechOrbit} from '../techOrbit'
 import {createTickerRings} from '../tickerRings'
 import {createTypography} from '../typography'
 
@@ -34,6 +35,7 @@ export const ANIMATION_FACTORIES = {
   [AnimationId.LOGO_LIFT]: createLogoLift,
   [AnimationId.LABEL_SPIN]: createLabelSpin,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
+  [AnimationId.TECH_ORBIT]: createTechOrbit,
   [AnimationId.PLANTED]: createPlanted,
   [AnimationId.SETTLE]: createSettleEffect,
   [AnimationId.SPOTLIGHT]: createSpotlight,

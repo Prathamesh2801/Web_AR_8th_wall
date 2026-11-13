@@ -34,3 +34,5 @@ brand-assets/*/photos/
 # Meshy originals (up to ~100 MB); the optimised copies live in public/brands/<brand>/models
 raw-assests/
 raw-output/
+# Meshy source models kept next to the brand (input to scripts/optimize-model.mjs), too big for git
+brand-assets/*/models/*-source.glb

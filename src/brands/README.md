@@ -62,6 +62,7 @@ of the lens menu until then):
 | Callouts | `callouts.items` = `{key: {text, side: -1/1, y}}` |
 | Ticker | `tickerRings.rings` = `{key: {text, y, radius, tiltDeg, speed, direction}}` |
 | Orbit | `nutrients` |
+| Tech Orbit (Elements) | `techOrbit.items` = `[{key, label, icon, badge: {cx, cy} (mm), pitch, model?}]` + `public/brands/<id>/icons/<icon>.svg`: see zeal |
 | Scan | `scan.readouts` = `['line', ...]` (+ `scan.verdict`), or `nutrients` |
 | Planted | `nutrients` + `planted: {enabled: true}` + `public/brands/<id>/models/{soil,ginseng-root,grape}.glb` |
 

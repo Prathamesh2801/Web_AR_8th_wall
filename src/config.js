@@ -138,6 +138,7 @@ export const AnimationId = {
   LABEL_SPIN: "labelSpin",
   PLANTED: "planted",
   NUTRIENT_ORBIT: "nutrientOrbit",
+  TECH_ORBIT: "techOrbit",
   SETTLE: "settle",
   SPOTLIGHT: "spotlight",
   ENERGY: "energy",
@@ -330,6 +331,59 @@ export const ANIMATIONS = {
     textColor: "#FFFFFF",
     accentColor: "#FFD45A", // separators + edge rules
     bandColor: "rgba(6, 52, 50, 0.6)", // see-through label teal behind the text
+  },
+
+  /**
+   * The label's printed service badges lift off as 3D coins into one orbit ring round the
+   * bottle; tap one: it rises onto an info board above the cap. A brand's items may name a GLB `model`
+   * that replaces the coin in orbit. See techOrbit.js.
+   */
+  [AnimationId.TECH_ORBIT]: {
+    enabled: true,
+    active: false,
+    group: "elements",
+    label: "Tech Orbit",
+    delay: 0,
+
+    // Per brand: [{key, label, icon (public/brands/<id>/icons/<icon>.svg), badge: {cx, cy}
+    // (mm, trim label), pitch (card copy), model? (GLB)}]
+    items: [],
+    cardEyebrow: "Service",
+
+    // Orbit: ONE ring, coins evenly spaced, turning as a whole.
+    trackMs: 900, // the orbit ring draws in first
+    emergeMs: 1300, // one coin, badge -> its slot
+    staggerMs: 160, // between coins leaving their badges
+    exitSpeed: 1.8, // x faster home
+    speed: 0.05, // rev/s
+    radius: 1.85, // x bottle radius
+    height: 0.1, // x label height above the label centre
+    tiltDeg: 12, // ring tilt (front dips, back rises)
+    topScale: 1.6, // coin size in orbit, x the printed badge
+    depthMm: 1.6, // coin thickness
+    modelScale: 1.25, // a 3D model (item.model) in place of its coin, x the coin's size
+    bobMm: 0.8,
+    labelMm: 4, // name text height (caps); shown on the near side only
+    trackOpacity: 0.55,
+    trackColor: "#9BE23B",
+    // Tap: the coin rises onto an info board above the cap.
+    selectMs: 750,
+    stageScale: 1.5, // the coin as the board's medallion, x the printed badge
+    stageGapMm: 4, // cap top -> board's lower edge (low: the top of the screen has the status pill)
+    cardMm: 56, // board width (~ the bottle's width: a 78 mm board filled a phone screen at arm's length)
+    dimOthers: 0.5, // the orbiting coins while one is shown
+    cardFooter: "",
+    cardTop: "rgba(18, 64, 34, 0.92)",
+    cardBottom: "rgba(6, 30, 14, 0.94)",
+    cardEdge: "rgba(155, 226, 59, 0.85)",
+    cardGlow: "rgba(155, 226, 59, 0.6)",
+    cardAccent: "#9BE23B",
+    brightness: 0.95, // coin faces, x the room light
+    printAzimuthDeg: 0, // calibration: rotate onto the prints if they sit beside them
+    paperColor: "#F6F8F3", // the badge, as printed
+    rimColor: "#8CCB3A",
+    discColor: "#1C552A",
+    sideColor: "#9BE23B", // the coin's edge
   },
 
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */
@@ -528,6 +582,7 @@ const needs = {
   [AnimationId.CALLOUTS]: hasAny(ANIMATIONS[AnimationId.CALLOUTS].items),
   [AnimationId.TICKER]: hasAny(ANIMATIONS[AnimationId.TICKER].rings),
   [AnimationId.LABEL_SPIN]: !!BRAND.label?.image,
+  [AnimationId.TECH_ORBIT]: (ANIMATIONS[AnimationId.TECH_ORBIT].items?.length ?? 0) > 0,
   [AnimationId.LOGO_LIFT]: !!(ANIMATIONS[AnimationId.LOGO_LIFT].mark && ANIMATIONS[AnimationId.LOGO_LIFT].print),
   [AnimationId.NUTRIENT_ORBIT]: hasNutrients,
   [AnimationId.SCAN]: hasNutrients || ANIMATIONS[AnimationId.SCAN].readouts.length > 0,
