@@ -27,6 +27,7 @@
 import * as THREE from 'three'
 import {SVGLoader} from 'three/examples/jsm/loaders/SVGLoader.js'
 
+import {fetchAsset} from '../assets'
 import {PRODUCT, brandFile} from '../config'
 import {createLabelPatch} from './labelPatch'
 import {haptic} from '../sound'
@@ -61,7 +62,7 @@ export const createLogoLift = (cfg) => {
   root.name = 'logoLift'
   let shapes = null
   const viewBox = {w: 1000, h: 1000}
-  fetch(brandFile(cfg.mark)).then(r => r.text())
+  fetchAsset(brandFile(cfg.mark)).then(r => r.text())
     .then((svg) => {
       const vb = svg.match(/viewBox="[\d.\s-]*?([\d.]+)\s+([\d.]+)"/)
       if (vb) { viewBox.w = +vb[1]; viewBox.h = +vb[2] }

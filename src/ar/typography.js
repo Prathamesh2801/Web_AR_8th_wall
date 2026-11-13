@@ -24,11 +24,12 @@ import * as THREE from 'three'
 import {FontLoader} from 'three/examples/jsm/loaders/FontLoader.js'
 import {TextGeometry} from 'three/examples/jsm/geometries/TextGeometry.js'
 
+import {fetchAsset} from '../assets'
 import {PRODUCT} from '../config'
 import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 
-const FONT_URL = '/fonts/montserrat-800.typeface.json' // Montserrat ExtraBold, A-Z a-z
+export const FONT_URL = '/fonts/montserrat-800.typeface.json' // Montserrat ExtraBold, A-Z a-z
 const CAP = 0.7 // Montserrat cap height, em
 
 // Seconds, from a word's own start.
@@ -79,7 +80,7 @@ export const makeGlow = () => {
 export const createTypography = (cfg) => {
   const root = new THREE.Group()
   let font = null
-  fetch(FONT_URL).then(r => r.json()).then(j => { font = new FontLoader().parse(j) })
+  fetchAsset(FONT_URL).then(r => r.json()).then(j => { font = new FontLoader().parse(j) })
     .catch(err => console.warn('[AR] typography font failed to load', err))
 
   let built = null

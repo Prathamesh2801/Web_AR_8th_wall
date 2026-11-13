@@ -13,7 +13,7 @@ npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
 npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
-node scripts/optimize-model.mjs <in.glb> <out.glb> [tris] [px]  # raw Meshy GLB (~20 MB) -> phone GLB (<300 KB): colour map only (WebP), simplified, meshopt
+node scripts/optimize-model.mjs <in.glb> <out.glb> [tris=0] [px]  # raw Meshy GLB (~20 MB) -> web GLB (~2 MB): colour map only (WebP), FULL mesh, meshopt (simplifying made smooth models lumpy)
 ```
 
 Append `?debug` to the URL to get the TUNE button: the dashboard (src/components/ar/Dashboard.jsx).
@@ -54,11 +54,12 @@ src/ar/               engine + three.js. NO React imports in this folder.
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty
   trackingStore.js      the only AR<->React bridge (useSyncExternalStore + getScene())
+src/assets.js         preloads every enabled effect's files while the start screen is up (Start button = progress); fills THREE.Cache (`file:`/`image:` keys) + fetchAsset() for plain fetches, so no effect downloads mid-AR. New effect files: add them to assetList()
 src/tuning.js         dashboard persistence (localStorage, ?debug only) + copy/reset
 src/fullscreen.js     double-tap the camera view = toggle full screen (Android; iPhone Safari has no API)
 src/sound.js          UI sounds (Web Audio, unlocked on the Start tap) + haptics
 src/components/ar/    2D UI: StartScreen (+ BottleModel: 3D hero lathed from `bottle` + label art, when the brand sets experience.model), AROverlay, LensMenu, PhotoPreview, NutrientCard, Dashboard, ErrorFallback
-public/brands/<id>/   per brand: hero.jpg, targets/ (generated: JSON + luminance PNG only), models/ (GLB from scripts/optimize-model.mjs; keep each < ~300 KB; sources in brand-assets/<id>/models/*-source.glb, git-ignored)
+public/brands/<id>/   per brand: hero.jpg, targets/ (generated: JSON + luminance PNG only), models/ (GLB from scripts/optimize-model.mjs, preloaded by assets.js; sources in brand-assets/<id>/models/*-source.glb, git-ignored)
 public/sounds/        lock.mp3, select.mp3, snap.mp3 (Envato Elements, trimmed + peak-normalised mono MP3); volumes in SOUND (config.js)
 scripts/generate-targets.mjs   non-interactive target generation (uses the CLI's applyCrop)
 public/fonts/         A01 font (Montserrat 800, A-Z, OFL licence alongside)

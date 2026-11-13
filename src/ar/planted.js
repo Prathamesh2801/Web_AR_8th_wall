@@ -33,7 +33,8 @@ import {cameraLight} from './cameraLight'
 import {NUTRIENTS} from './nutrientData'
 import {RenderOrder} from './renderOrder'
 
-const MODELS = ['soil', 'ginseng-root', 'grape']
+export const PLANTED_MODELS = ['soil', 'ginseng-root', 'grape'] // public/brands/<id>/models/<name>.glb
+const MODELS = PLANTED_MODELS
 const DEG = Math.PI / 180
 
 // Points round the bottle. az: degrees from the label's centre (+z) toward +x;

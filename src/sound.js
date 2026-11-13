@@ -7,9 +7,11 @@
  * unlocked for the session. iOS Silent mode is overridden (see audioSession below).
  * Levels: SOUND in config.js (read on every play, so dashboard edits apply at once).
  */
+import {fetchAsset} from './assets'
 import {SOUND} from './config'
 
-const NAMES = ['lock', 'select', 'snap']
+export const SOUND_NAMES = ['lock', 'select', 'snap']
+const NAMES = SOUND_NAMES
 let ctx = null
 const buffers = {}
 
@@ -36,7 +38,7 @@ export const unlockSound = () => {
   const wake = () => ctx.state !== 'running' && ctx.resume()
   for (const e of ['touchend', 'click']) document.addEventListener(e, wake, {capture: true, passive: true})
   for (const name of NAMES) {
-    fetch(`/sounds/${name}.mp3`)
+    fetchAsset(`/sounds/${name}.mp3`)
       .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then(b => ctx.decodeAudioData(b))
       .then(buf => { buffers[name] = buf })

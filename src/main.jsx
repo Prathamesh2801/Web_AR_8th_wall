@@ -1,9 +1,13 @@
 import {StrictMode} from 'react'
 import {createRoot} from 'react-dom/client'
 import App from './App.jsx'
+import {preloadAssets} from './assets'
 import {BRAND, EXPERIENCE} from './config'
 import './index.css'
 import './fullscreen'
+
+// Start downloading every effect's files now, while the start screen is up (assets.js).
+preloadAssets()
 
 document.title = `${EXPERIENCE.brand} ${EXPERIENCE.product} AR`
 // Brand colours: Tailwind v4 utilities read these variables at runtime (text-gold,

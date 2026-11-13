@@ -1,15 +1,21 @@
 /**
- * Turns a raw AI-generated GLB (Meshy etc.: ~500k triangles, three 2048 px PBR maps,
- * ~20 MB) into a phone-sized one (< ~300 KB) for an AR effect.
+ * Turns a raw AI-generated GLB (Meshy etc.: ~400k triangles, three 2048 px PBR maps,
+ * ~20 MB) into a web one (~2 MB) WITHOUT visible loss, for an AR effect.
  *
- *   node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles=10000] [texture=1024]
+ *   node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles=0] [texture=1536] [error=0.0005]
+ *
+ * triangles 0 (default) = keep the full mesh. Simplifying is opt-in: on the white VR headset
+ * EVERY simplification showed (16k: lumpy + torn seams; 116k / 193k: lumps on the smooth
+ * shell), while the full 385k mesh compresses to ~2 MB and looks exactly like the source.
+ * The app preloads models before the AR starts, so 2 MB costs no lag.
  *
  * 1. Here (glTF-Transform core + the project's sharp): keep only the base-colour texture
  *    (the app shades these models with a matcap, no scene lights, so normal / metallic-
  *    roughness maps are dead weight) and re-encode it as WebP at `texture` px
  *    (three's GLTFLoader reads EXT_texture_webp).
- * 2. The glTF-Transform CLI (npx, its own process): weld, simplify to ~`triangles`,
- *    meshopt-compress (the app's loaders set the meshopt decoder).
+ * 2. The glTF-Transform CLI (npx, its own process): weld, (optionally) simplify with UV
+ *    seams locked and a tight error cap, meshopt-compress (the app's loaders set the
+ *    meshopt decoder).
  * Two steps on purpose: @gltf-transform/functions brings a second sharp/libvips, and two
  * in one process break each other ("colourspace: parameter space not set").
  */
@@ -22,9 +28,9 @@ import sharp from 'sharp'
 import {NodeIO} from '@gltf-transform/core'
 import {ALL_EXTENSIONS, EXTTextureWebP} from '@gltf-transform/extensions'
 
-const [input, output, tris = '10000', tex = '1024'] = process.argv.slice(2)
+const [input, output, tris = '0', tex = '1536', err = '0.0005'] = process.argv.slice(2)
 if (!input || !output) {
-  console.error('usage: node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles] [texture px]')
+  console.error('usage: node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles, 0 = keep all] [texture px] [error]')
   process.exit(1)
 }
 
@@ -51,7 +57,7 @@ await io.write(a, doc)
 // 2. Geometry, with the CLI.
 const cli = (...args) => execFileSync('npx', ['-y', '@gltf-transform/cli@4', ...args.map(x => `"${x}"`)], {stdio: 'inherit', shell: true})
 cli('weld', a, b)
-cli('simplify', b, c, '--ratio', String(Math.min(1, +tris / before)), '--error', '0.01')
-cli('meshopt', c, output)
+if (+tris > 0) cli('simplify', b, c, '--ratio', String(Math.min(1, +tris / before)), '--error', err, '--lock-border', 'true')
+cli('meshopt', +tris > 0 ? c : b, output)
 rmSync(tmp, {recursive: true, force: true})
-console.log(`${input}: ${Math.round(before)} triangles -> ~${tris}, ${(statSync(output).size / 1024).toFixed(0)} KB -> ${output}`)
+console.log(`${input}: ${Math.round(before)} triangles -> ${+tris > 0 ? '~' + tris : 'all kept'}, ${(statSync(output).size / 1024).toFixed(0)} KB -> ${output}`)

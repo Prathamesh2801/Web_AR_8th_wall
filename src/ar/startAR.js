@@ -9,6 +9,7 @@
  */
 import * as THREE from 'three'
 
+import {fetchAsset} from '../assets'
 import {BRAND, TRACKING, brandFile} from '../config'
 import {CAMERA_SAMPLE_PX} from './cameraLight'
 import {createImageTargetPipelineModule} from './imageTargetPipelineModule'
@@ -34,7 +35,7 @@ const targetUrl = name => brandFile(`targets/${name}.json`)
 const loadTargets = async () => {
   const results = await Promise.all(TRACKING.targets.map(async (name) => {
     try {
-      const res = await fetch(targetUrl(name))
+      const res = await fetchAsset(targetUrl(name))
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (!data?.imagePath || data.name !== name) throw new Error('malformed metadata')

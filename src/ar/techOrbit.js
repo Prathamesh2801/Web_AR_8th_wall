@@ -26,6 +26,7 @@ import * as THREE from 'three'
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
 import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 
+import {fetchAsset} from '../assets'
 import {PRODUCT, brandFile} from '../config'
 import {haptic} from '../sound'
 import {cameraLight} from './cameraLight'
@@ -44,7 +45,7 @@ const BADGE = {ring: 5.6, disc: 4.9, icon: 6.1}
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
 /** Loads a Tabler (stroke) icon as a white image; `onImg` gets it when ready. */
-const loadIcon = (url, onImg) => fetch(url).then(r => r.text()).then((svg) => {
+const loadIcon = (url, onImg) => fetchAsset(url).then(r => r.text()).then((svg) => {
   const img = new Image()
   img.onload = () => onImg(img)
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace(/currentColor/g, '#ffffff'))

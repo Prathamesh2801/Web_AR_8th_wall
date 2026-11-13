@@ -1,3 +1,6 @@
+import {useEffect, useState} from 'react'
+
+import {onPreload} from '../../assets'
 import {EXPERIENCE} from '../../config'
 import {BottleModel} from './BottleModel'
 
@@ -12,11 +15,18 @@ import {BottleModel} from './BottleModel'
  *
  * Everything product-specific comes from EXPERIENCE (config.js). Layout: a full-height
  * column, the product taking the free space, the button pinned to the bottom.
+ *
+ * The button doubles as the loading bar: every effect's files preload while this screen is
+ * up (assets.js), and Start unlocks when they are in, so no effect downloads mid-AR.
  */
 const CORNERS = ['left-3 top-3 border-l-2 border-t-2 rounded-tl-xl', 'right-3 top-3 border-r-2 border-t-2 rounded-tr-xl',
   'left-3 bottom-3 border-l-2 border-b-2 rounded-bl-xl', 'right-3 bottom-3 border-r-2 border-b-2 rounded-br-xl']
 
-export const StartScreen = ({onStart, unsupportedReason}) => (
+export const StartScreen = ({onStart, unsupportedReason}) => {
+  const [load, setLoad] = useState({progress: 0, done: false})
+  useEffect(() => onPreload(setLoad), [])
+  const pct = Math.round(load.progress * 100)
+  return (
   <div className="pointer-events-auto fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-neutral-950">
     {/* Accent light from above, the bottle's deep teal from below. */}
     <div
@@ -76,9 +86,16 @@ export const StartScreen = ({onStart, unsupportedReason}) => (
           <button
             type="button"
             onClick={onStart}
-            className="w-full rounded-full bg-gold py-4 text-base font-semibold text-neutral-950 shadow-[0_10px_40px_-10px] shadow-gold/60 transition active:scale-[0.98]"
+            disabled={!load.done}
+            aria-busy={!load.done}
+            className={`relative w-full overflow-hidden rounded-full py-4 text-base font-semibold transition active:scale-[0.98] ${
+              load.done ? 'bg-gold text-neutral-950 shadow-[0_10px_40px_-10px] shadow-gold/60' : 'bg-gold/15 text-white/85'
+            }`}
           >
-            Start AR experience
+            {!load.done && (
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 bg-gold/35 transition-[width] duration-300" style={{width: `${pct}%`}} />
+            )}
+            <span className="relative">{load.done ? 'Start AR experience' : `Getting ready… ${pct}%`}</span>
           </button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-white/45">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -90,4 +107,5 @@ export const StartScreen = ({onStart, unsupportedReason}) => (
       )}
     </div>
   </div>
-)
+  )
+}

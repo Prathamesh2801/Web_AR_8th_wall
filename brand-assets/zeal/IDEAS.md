@@ -64,11 +64,13 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
   maps are thrown away anyway).
 - Pipeline: download GLB -> `brand-assets/zeal/models/<name>-source.glb` (local only,
   git-ignored) -> `node scripts/optimize-model.mjs brand-assets/zeal/models/<name>-source.glb
-  public/brands/zeal/models/<name>.glb 16000 1536` (VR headset v2, white: 17.9 MB -> 372 KB;
-  2048 px looked identical on the board, 1024 px / 12k triangles were visibly soft) -> add
-  `model: 'models/<name>.glb'` to the item in `src/brands/zeal/brand.js`. Size in the scene:
-  `techOrbit.modelScale` (TUNE).
-- Models: VR headset DONE (`vr-headset.glb`, v2 white, 2026-11-13). To do: controller, robot, camera, hand.
+  public/brands/zeal/models/<name>.glb` -> add `model: 'models/<name>.glb'` to the item in
+  `src/brands/zeal/brand.js`. Keeps the FULL mesh (VR headset: 17.9 MB -> 2.3 MB, looks
+  identical): every simplification tried (16k, 116k, 193k of 385k triangles) made the
+  smooth shell lumpy / tore seams. The start screen preloads it (src/assets.js), so the
+  size costs a few seconds on the Start button, not lag in AR.
+  Size in the scene: `techOrbit.modelScale` (TUNE).
+- Models: VR headset DONE (`vr-headset.glb`, v2 white, full mesh, 2026-11-13). To do: controller, robot, camera, hand.
 - Draft prompts (style line appended to each):
   - VR headset: `compact VR headset with a soft strap`
   - Game controller: `modern game controller, chunky buttons`
