@@ -16,6 +16,7 @@ import {createCallouts} from '../callouts'
 import {createEnergy} from '../energy'
 import {createLabelSpin} from '../labelSpin'
 import {createLogoLift} from '../logoLift'
+import {createPhotoBurst} from '../photoBurst'
 import {createPlanted} from '../planted'
 import {createScan} from '../scan'
 import {createNutrientSystem} from '../nutrientSystem'
@@ -36,6 +37,7 @@ export const ANIMATION_FACTORIES = {
   [AnimationId.LABEL_SPIN]: createLabelSpin,
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
   [AnimationId.TECH_ORBIT]: createTechOrbit,
+  [AnimationId.PHOTO_BURST]: createPhotoBurst,
   [AnimationId.PLANTED]: createPlanted,
   [AnimationId.SETTLE]: createSettleEffect,
   [AnimationId.SPOTLIGHT]: createSpotlight,

@@ -46,11 +46,11 @@ export const unlockSound = () => {
   }
 }
 
-export const playSound = (name) => {
+export const playSound = (name, level0 = 1) => { // level0: x the sound's own level (quieter repeats)
   const buf = buffers[name]
   if (!ctx || !buf) return
   if (ctx.state !== 'running') ctx.resume() // works when called from a tap (shutter)
-  const level = SOUND.volume * (SOUND[name] ?? 1)
+  const level = SOUND.volume * (SOUND[name] ?? 1) * level0
   if (!(level > 0)) return
   const src = ctx.createBufferSource()
   const gain = ctx.createGain()

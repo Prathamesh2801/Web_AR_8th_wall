@@ -145,6 +145,7 @@ export const AnimationId = {
   PLANTED: "planted",
   NUTRIENT_ORBIT: "nutrientOrbit",
   TECH_ORBIT: "techOrbit",
+  PHOTO_BURST: "photoBurst",
   SETTLE: "settle",
   SPOTLIGHT: "spotlight",
   ENERGY: "energy",
@@ -159,8 +160,8 @@ export const AnimationId = {
  */
 export const GROUPS = [
   { id: "type", label: "Typography" },
-  { id: "elements", label: "Elements" },
   { id: "glow", label: "Effects" },
+  { id: "elements", label: "Elements" },
 ];
 
 /**
@@ -403,6 +404,59 @@ export const ANIMATIONS = {
     sideColor: "#9BE23B", // the coin's edge
   },
 
+  /**
+   * The brand's event photos as polaroids: they shoot out of the cap (click + flash),
+   * develop in flight and fan out behind the bottle; swipe slides them, tap = to the
+   * front with its caption. See photoBurst.js.
+   */
+  [AnimationId.PHOTO_BURST]: {
+    enabled: true,
+    active: false,
+    group: "elements",
+    label: "Photo Burst",
+    delay: 0,
+
+    // Per brand: [{file (public/brands/<id>/...), caption?}]
+    photos: [],
+
+    // Entry: one print per staggerMs flies out of the cap and develops.
+    leadMs: 400, // before the first print
+    staggerMs: 380,
+    flyMs: 1100, // cap -> its place in the fan
+    developMs: 1600, // blank -> full colour
+    launch: 2.5, // upward kick out of the cap, label heights / s
+    springHz: 1.8, // lower = lazier, more overshoot
+    springDamping: 0.65,
+    exitSpeed: 2.2, // x faster back into the cap
+    clickVolume: 0.35, // the shutter click, x the "snap" sound's level
+    clickGapMs: 200, // closer births share one click
+    flash: 0.9, // lime cap flash per print
+    glowColor: "#9BE23B",
+
+    // Fan behind the bottle, facing the viewer.
+    fanSlots: 7, // photos shown at once (more wrap round as you swipe)
+    fanDeg: 150, // the arc's spread
+    fanRadius: 1.35, // x label height, from the fan's centre
+    fanY: 0, // fan centre, x label height above the label centre
+    fanBack: 1.6, // behind the bottle axis, x bottle radius
+    fanTilt: 0.55, // cards lean along the arc, x their angle on it
+    floatMm: 1.2,
+    floatHz: 0.25,
+    swayDeg: 2.5,
+    dragSlots: 3, // swipe: one screen width slides this many photos
+    flickEaseMs: 500,
+    flickMax: 12, // slots / s
+
+    // Tap: to the front.
+    selectMs: 700,
+    focusScale: 1.5, // x the print's size
+    focusGap: 2.2, // in front of the bottle axis, x bottle radius
+    focusY: 0.3, // x label height above the label centre
+    dimOthers: 0.55,
+    brightness: 1, // prints, x the room light
+    paperColor: "#F7F5EE",
+  },
+
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */
   [AnimationId.NUTRIENT_ORBIT]: {
     enabled: true,
@@ -602,6 +656,8 @@ const needs = {
   [AnimationId.LABEL_SPIN]: !!BRAND.label?.image,
   [AnimationId.TECH_ORBIT]:
     (ANIMATIONS[AnimationId.TECH_ORBIT].items?.length ?? 0) > 0,
+  [AnimationId.PHOTO_BURST]:
+    (ANIMATIONS[AnimationId.PHOTO_BURST].photos?.length ?? 0) > 0,
   [AnimationId.LOGO_LIFT]: !!(
     ANIMATIONS[AnimationId.LOGO_LIFT].mark &&
     ANIMATIONS[AnimationId.LOGO_LIFT].print

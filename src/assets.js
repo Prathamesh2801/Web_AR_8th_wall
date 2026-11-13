@@ -33,6 +33,7 @@ const assetList = () => {
   if (on.has('labelSpin') && PRODUCT.label.image) urls.add(PRODUCT.label.image)
   if (on.has('logoLift')) for (const f of [ANIMATIONS.logoLift.mark, ANIMATIONS.logoLift.patch]) if (f) urls.add(brandFile(f))
   if (on.has('planted')) for (const n of PLANTED_MODELS) urls.add(brandFile(`models/${n}.glb`))
+  if (on.has('photoBurst')) for (const ph of ANIMATIONS.photoBurst.photos ?? []) urls.add(brandFile(ph.file))
   if (on.has('techOrbit')) {
     for (const it of ANIMATIONS.techOrbit.items ?? []) {
       urls.add(brandFile(`icons/${it.icon}.svg`))

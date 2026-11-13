@@ -84,6 +84,10 @@ export const RenderOrder = {
 
   /** Text last: a label must stay readable over anything it overlaps. */
   LABEL: 50,
+  /** Photo Burst: soft shadows behind the (opaque) prints; the lime cap flash. */
+  PHOTO_SHADOW: 23,
+  PHOTO_FLASH: 44,
+
   /** Callout cards (typed feature text). */
   CALLOUT_CARD: 51,
 }

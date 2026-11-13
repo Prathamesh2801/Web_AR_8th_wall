@@ -13,6 +13,7 @@ npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
 npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
+node scripts/prepare-photos.mjs <out-dir> <photo...>  # event photos -> square 900 px WebP prints for Photo Burst (attention crop: keeps people in landscape shots), named event-01.. in the given order
 node scripts/optimize-model.mjs <in.glb> <out.glb> [tris=0] [px] [error] [clean=3] [erode=0]  # raw Meshy GLB (~20 MB) -> web GLB (~2 MB): colour map only (WebP), FULL mesh, meshopt (simplifying made smooth models lumpy)
 ```
 
@@ -50,6 +51,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   sparkle.js            Effects style "Sparkle": cap flash, brand-colour stars burst + swirl + settle into orbit (all motion in the shader); exit rewinds time
   cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 64 px, upright), for lit effects; paperAt() = the real paper colour under a screen box
   techOrbit.js          Elements style "Tech Orbit": the label's printed service badges lift off as 3D coins (icon art), one evenly spaced ring (each model born as a lime scan-line hologram that springs out and materializes; spin, bob, ~20% bigger at the front, lime rim glow; swipe left/right turns the ring, a flick sets its direction, it never stops; no line, no text; sizes measured per model), tap = it hovers spinning above the cap, the others orbit on smaller (tap one = swap), and a curved glass panel on the body (over the logo) shows name + one-line pitch; an item's `model` GLB grows out of its badge in place of a coin
+  photoBurst.js         Elements style "Photo Burst": the brand's event photos (animations.photoBurst.photos) as polaroids shoot out of the cap (click + lime flash), develop in flight (shader) and spring into a fan behind the bottle that faces the viewer; swipe slides them (wraps), tap = to the front with its caption, tap another = swap
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty
@@ -69,7 +71,7 @@ brand-assets/<id>/    brand reference: README (product facts + shape), label/ or
 ## Lens menu (Penpot page "02 · Lens Menu")
 
 Snapchat-style: after the first lock (lock sound) the menu appears with nothing selected.
-Groups (Type / Elements / Glow) sit in a carousel; the selected one is inside the shutter
+Groups (Typography / Effects / Elements, the order of GROUPS in config.js) sit in a carousel; the selected one is inside the shutter
 ring and is the ONE effect playing. Tapping the ring = photo (`XR8.CanvasScreenshot`,
 camera + 3D) -> flash + snap sound -> PhotoPreview (Save / Share). Losing the bottle dims
 the menu and keeps the choice. The outline (no `group`, `active: true`) is the lock cue.

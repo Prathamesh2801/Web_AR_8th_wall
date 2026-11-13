@@ -138,6 +138,25 @@ export default {
           pitch: 'Custom robots for live installations'},
       ],
     },
+    // Elements "Photo Burst": real Zeal event work as polaroids. Files made with
+    // scripts/prepare-photos.mjs (square, attention crop; originals in
+    // brand-assets/zeal/photos/events/, local). Order = fan order: the middle 7 show at
+    // rest (04-08 around the centre), the rest come round on a swipe. Captions describe
+    // the setup only, no client names: edit freely.
+    photoBurst: {
+      photos: [
+        {file: 'photos/event-01.webp', caption: '3D plant model + live screen'},
+        {file: 'photos/event-02.webp', caption: 'Touch-reactive map wall'},
+        {file: 'photos/event-03.webp', caption: 'Interactive e-mobility table'},
+        {file: 'photos/event-04.webp', caption: 'VR interactive zone'},
+        {file: 'photos/event-05.webp', caption: 'Sensor game table'},
+        {file: 'photos/event-06.webp', caption: 'Beachside surf game wall'},
+        {file: 'photos/event-07.webp', caption: 'Touch pipeline wall'},
+        {file: 'photos/event-08.webp', caption: 'Interactive scale model'},
+        {file: 'photos/event-09.webp', caption: 'Smart factory model'},
+        {file: 'photos/event-10.webp', caption: 'AI avatar experience'},
+      ],
+    },
     // The sticker's 8 service badges, scanned off the bottle.
     scan: {
       readouts: ['Virtual Reality', 'VR Games', 'AR Experiences', 'Interactive Walls',
