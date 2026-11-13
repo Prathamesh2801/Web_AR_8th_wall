@@ -334,9 +334,9 @@ export const ANIMATIONS = {
   },
 
   /**
-   * The label's printed service badges lift off as 3D coins into one orbit ring round the
-   * bottle; tap one: it rises onto an info board above the cap. A brand's items may name a GLB `model`
-   * that replaces the coin in orbit. See techOrbit.js.
+   * The label's printed service badges lift off (as 3D coins, or the item's GLB `model`) into
+   * one orbit ring round the bottle; tap one: it hovers above the cap, the others step aside
+   * and a glass panel on the body shows its name + pitch. See techOrbit.js.
    */
   [AnimationId.TECH_ORBIT]: {
     enabled: true,
@@ -346,12 +346,12 @@ export const ANIMATIONS = {
     delay: 0,
 
     // Per brand: [{key, label, icon (public/brands/<id>/icons/<icon>.svg), badge: {cx, cy}
-    // (mm, trim label), pitch (card copy), model? (GLB)}]
+    // (mm, trim label), pitch (ONE short line on the panel), model? (GLB), size? (x, by eye)}]
     items: [],
-    cardEyebrow: "Service",
 
-    // Orbit: ONE ring, coins evenly spaced, turning as a whole.
-    trackMs: 900, // the orbit ring draws in first
+    // Orbit: ONE ring, items evenly spaced, turning as a whole (no drawn line: one through
+    // the real table looked fake).
+    trackMs: 500, // lead-in before the first item leaves its badge
     emergeMs: 1300, // one coin, badge -> its slot
     staggerMs: 160, // between coins leaving their badges
     exitSpeed: 1.3, // x faster home
@@ -362,21 +362,19 @@ export const ANIMATIONS = {
     topScale: 1.6, // coin size in orbit, x the printed badge
     depthMm: 1.6, // coin thickness
     modelScale: 1.25, // a 3D model (item.model) in place of its coin, x the coin's size
-    modelSpin: 0.12, // a model's own turn in orbit, rev/s
-    frontScale: 1.25, // carousel depth: size passing the front ...
-    backScale: 0.8, // ... and round the back, x its orbit size
-    modelSwayDeg: 15, // on the board: faces you, swaying this far side to side
-    bobMm: 1.6, // up/down while orbiting
+    modelSpin: 0.12, // a model's own turn, rev/s
+    frontScale: 1.1, // carousel depth: size passing the front ...
+    backScale: 0.9, // ... and round the back (the camera's perspective adds its own)
+    bobMm: 1.6, // up/down
     bobHz: 0.3,
-    trackOpacity: 0, // the drawn orbit line (0 = none; 0.55 = a thin lime ring)
-    trackColor: "#9BE23B",
-    // Tap: the coin rises onto an info board above the cap.
+    // Tap: it hovers above the cap; the others shrink back into their prints; the panel shows.
     selectMs: 750,
-    stageScale: 1.5, // the coin as the board's medallion, x the printed badge
-    stageGapMm: 4, // cap top -> board's lower edge (low: the top of the screen has the status pill)
-    cardMm: 56, // board width (~ the bottle's width: a 78 mm board filled a phone screen at arm's length)
-    dimOthers: 0.5, // the orbiting coins while one is shown
-    cardFooter: "",
+    hoverMm: 8, // cap top -> its base
+    hoverScale: 2.2, // x the printed badge (orbit is topScale)
+    panelMm: 30, // panel height
+    panelArcDeg: 140, // panel width, round the bottle (text keeps to its middle)
+    panelY: 0.15, // panel centre, x label height above the label centre (Zeal: logo + ZEAL)
+    panelOpacity: 1, // the glass colours (cardTop/cardBottom) carry their own see-through
     cardTop: "rgba(18, 64, 34, 0.92)",
     cardBottom: "rgba(6, 30, 14, 0.94)",
     cardEdge: "rgba(155, 226, 59, 0.85)",

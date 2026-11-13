@@ -104,3 +104,9 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - Effects: Glow, Spotlight, Energy, Scan (8 services), Sparkle.
 - Elements: Tech Orbit (badge coins; Meshy models can replace them per item).
 - Start screen: 3D bottle built from the sticker art.
+- Polish (2026-11-13, from device shots #3/#4): models sized by their MIDDLE dimension (by the
+  largest, the wide headset looked big, the tall wall small; per-item `size` tweaks by eye);
+  depth scale subtle (1.1 / 0.9); no orbit line. Tap: the model hovers spinning above the cap,
+  the other four shrink back into their prints, and a curved glass panel on the body over the
+  logo shows the name + a ~6-word pitch (the old board above the cap crowded the top and read
+  blurry: small type on a small card).

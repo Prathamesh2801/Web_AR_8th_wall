@@ -1,25 +1,22 @@
 /**
  * techOrbit.js — Elements style "Tech Orbit": the label's service badges come to life.
  *
- *   Track   optional (trackOpacity, off by default): a thin lime ring draws itself round the bottle
- *   Lift    one by one, each printed badge (cfg.items[].badge, mm on the trim label) is
- *           copied as a 3D coin exactly over its print (paper ring, lime rim, green disc,
- *           white icon), thickens and flies into its slot: all coins evenly spaced on ONE
- *           ring that turns as a whole, like a carousel; the occluder hides the far side
- *   Orbit   models spin on their own axis, bob, and grow toward the front / shrink at the
- *           back (a carousel's depth); no text in orbit, the name is on the board
- *   Tap     the coin leaves the ring and rises above the cap onto a glass info board (the
- *           coin as its medallion; eyebrow, title, pitch, footer), facing and leaning toward
- *           the viewer; the other coins dim and keep turning round its gap. Tap the board
- *           or coin = back to its slot; tap another coin = swap
- *   Exit    a showing coin goes back first; then every item flies home into its badge
+ *   Lift    one by one, each printed badge (cfg.items[].badge, mm on the trim label) grows
+ *           out of its print and flies into its slot: all items evenly spaced on ONE ring
+ *           that turns as a whole, like a carousel; the occluder hides the far side
+ *   Orbit   models spin on their own axis, bob, and are a little bigger passing the front
+ *           (frontScale / backScale); no line, no text in orbit
+ *   Tap     it arcs up and hovers, spinning, above the cap; the others shrink back into
+ *           their prints; a curved glass panel unfolds on the body over the logo with the
+ *           name + one short line (big type: a small board above the cap read blurry).
+ *           Tap the model or the panel = back; the others grow out again
+ *   Exit    a chosen item goes back first; then every item shrinks home into its badge
  *
- * Coins are the stand-in until the brand has 3D models: an item with `model` (a GLB in
- * public/brands/<id>/, made with scripts/optimize-model.mjs) never shows a coin; the model
- * itself grows out of its printed badge (and shrinks back into it on exit). Models are re-shaded with the typography matcap + their own
- * colour texture: the AR scene has almost no lights, so their PBR material came out dark.
- * Coin faces are unlit art, so their brightness follows the room (cameraLight.js).
- * update() allocates nothing.
+ * Coins are the stand-in when an item has no `model` (a GLB in public/brands/<id>/, made
+ * with scripts/optimize-model.mjs); a model never shows a coin. Models are re-shaded with
+ * the typography matcap + their own colour texture: the AR scene has almost no lights, so
+ * their PBR material came out dark. Coin faces are unlit art, so their brightness follows
+ * the room (cameraLight.js). update() allocates nothing.
  */
 import * as THREE from 'three'
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
@@ -53,7 +50,7 @@ const loadIcon = (url, onImg) => fetchAsset(url).then(r => r.text()).then((svg) 
 
 /** The badge face as a texture; the icon is drawn in once its SVG has loaded. */
 const makeFace = (iconUrl, colors) => {
-  const S = 512 // also the board's medallion: 256 went soft there
+  const S = 512 // also seen big, hovering on the cap: 256 went soft
   const c = document.createElement('canvas')
   c.width = c.height = S
   const ctx = c.getContext('2d')
@@ -81,83 +78,51 @@ const makeFace = (iconUrl, colors) => {
   return tex
 }
 
-/** Wraps `text` to lines no wider than `w` at the context's current font. */
-const wrapLines = (ctx, text, w) => {
-  const lines = []
-  let line = ''
-  for (const word of text.split(/\s+/)) {
-    const next = line ? `${line} ${word}` : word
-    if (ctx.measureText(next).width > w && line) { lines.push(line); line = word } else line = next
-  }
-  if (line) lines.push(line)
-  return lines
-}
-
-/** The info board: dark glass card, lime edge, room at the top for the coin medallion. */
-const CARD = {w: 1024, h: 600, r: 56} // layout units; drawn at CARD_RES x for sharp text
-const CARD_RES = 2 // a phone's 3x screen shows the board wider than 1024 px
-const makeCard = (item, cfg) => {
-  // Card px the medallion covers below the top edge = its radius on this board (stageScale
-  // and cardMm are read when the card is drawn), capped so the text still fits.
-  const MEDALLION_PX = Math.min(200, Math.round(((BADGE.ring * cfg.stageScale) / cfg.cardMm) * CARD.w) + 6)
+/** The info panel's art: name + one short line on dark glass, lime edge. */
+const makePanel = (item, cfg, w, h) => {
   const c = document.createElement('canvas')
-  c.width = CARD.w * CARD_RES
-  c.height = CARD.h * CARD_RES
+  c.width = w
+  c.height = h
   const ctx = c.getContext('2d')
-  ctx.scale(CARD_RES, CARD_RES)
-  const round = (x, y, w, h, r) => {
-    ctx.beginPath()
-    ctx.moveTo(x + r, y)
-    ctx.arcTo(x + w, y, x + w, y + h, r)
-    ctx.arcTo(x + w, y + h, x, y + h, r)
-    ctx.arcTo(x, y + h, x, y, r)
-    ctx.arcTo(x, y, x + w, y, r)
-    ctx.closePath()
-  }
-  const P = 10 // inset for the glow
-  const g = ctx.createLinearGradient(0, 0, 0, CARD.h)
+  const P = h * 0.06
+  const r = h * 0.16
+  ctx.beginPath()
+  ctx.roundRect(P, P, w - 2 * P, h - 2 * P, r)
+  const g = ctx.createLinearGradient(0, 0, 0, h)
   g.addColorStop(0, cfg.cardTop)
   g.addColorStop(1, cfg.cardBottom)
   ctx.shadowColor = cfg.cardGlow
-  ctx.shadowBlur = 18
-  round(P, P, CARD.w - 2 * P, CARD.h - 2 * P, CARD.r)
+  ctx.shadowBlur = P * 0.8
   ctx.fillStyle = g
   ctx.fill()
   ctx.shadowBlur = 0
-  ctx.lineWidth = 5
+  ctx.lineWidth = h * 0.012
   ctx.strokeStyle = cfg.cardEdge
   ctx.stroke()
-  // Soft sheen across the top.
-  const sheen = ctx.createLinearGradient(0, 0, 0, CARD.h * 0.45)
-  sheen.addColorStop(0, 'rgba(255,255,255,0.10)')
-  sheen.addColorStop(1, 'rgba(255,255,255,0)')
-  round(P + 3, P + 3, CARD.w - 2 * P - 6, CARD.h * 0.45, CARD.r - 3)
-  ctx.fillStyle = sheen
-  ctx.fill()
-
+  // Text stays inside the middle ~76%: the panel curves away toward its sides.
+  const maxW = w * 0.76
+  const fit = (text, weight, px) => {
+    for (; px > 8; px -= 2) {
+      ctx.font = `${weight} ${px}px ${FONT}`
+      if (ctx.measureText(text).width <= maxW) break
+    }
+  }
   ctx.textAlign = 'center'
-  ctx.textBaseline = 'alphabetic'
-  // The top MEDALLION_PX stay clear: the coin sits there, centred on the top edge.
-  ctx.fillStyle = cfg.cardAccent
-  ctx.font = `700 32px ${FONT}`
-  ctx.letterSpacing = '6px'
-  ctx.fillText(cfg.cardEyebrow.toUpperCase(), CARD.w / 2, MEDALLION_PX + 52)
-  ctx.letterSpacing = '0px'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  ctx.strokeStyle = 'rgba(2, 18, 8, 0.7)'
+  fit(item.label, 800, Math.round(h * 0.32))
+  ctx.lineWidth = h * 0.03
+  ctx.strokeText(item.label, w / 2, h * 0.4)
   ctx.fillStyle = '#ffffff'
-  ctx.font = `800 72px ${FONT}`
-  ctx.fillText(item.label, CARD.w / 2, MEDALLION_PX + 130)
-  ctx.fillStyle = 'rgba(255,255,255,0.82)'
-  ctx.font = `500 38px ${FONT}`
-  wrapLines(ctx, item.pitch ?? '', CARD.w - 180).slice(0, 2)
-    .forEach((l, i) => ctx.fillText(l, CARD.w / 2, MEDALLION_PX + 196 + i * 50))
-  // Footer rule + site.
+  ctx.fillText(item.label, w / 2, h * 0.4)
   ctx.fillStyle = cfg.cardAccent
-  ctx.fillRect(CARD.w / 2 - 60, CARD.h - 92, 120, 4)
-  ctx.fillStyle = 'rgba(255,255,255,0.6)'
-  ctx.font = `700 28px ${FONT}`
-  ctx.letterSpacing = '4px'
-  ctx.fillText(cfg.cardFooter.toUpperCase(), CARD.w / 2, CARD.h - 44)
-  ctx.letterSpacing = '0px'
+  ctx.fillRect(w / 2 - h * 0.18, h * 0.585, h * 0.36, h * 0.014)
+  fit(item.pitch ?? '', 600, Math.round(h * 0.17))
+  ctx.lineWidth = h * 0.02
+  ctx.strokeText(item.pitch ?? '', w / 2, h * 0.73)
+  ctx.fillStyle = 'rgba(255,255,255,0.92)'
+  ctx.fillText(item.pitch ?? '', w / 2, h * 0.73)
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace
   tex.anisotropy = 8
@@ -173,12 +138,10 @@ export const createTechOrbit = (cfg) => {
   let t = 0 // entrance clock, ms; runs back on exit
   let leaving = false
   let turn = 0 // the ring's rotation, rad
-  let selected = null // item on the stage (or heading there)
+  let selected = null // item hovering on the cap (or heading there)
   const cam = new THREE.Vector3()
   const faceColor = new THREE.Color()
-  const dimColor = new THREE.Color()
   const slot = new THREE.Vector3()
-  const stagePos = new THREE.Vector3()
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
   let matcapTex = null
   const modelMatcap = () => (matcapTex ??= makeMatcap())
@@ -203,28 +166,18 @@ export const createTechOrbit = (cfg) => {
     rimGeo.rotateX(Math.PI / 2) // axis along z: the faces look out along +z / -z
     const faceGeo = new THREE.CircleGeometry(radius, 48)
     const rimMat = new THREE.MeshBasicMaterial({color: cfg.sideColor})
-
-    // The orbit track: a thin ring, tilted like the slots.
-    const ringR = R * cfg.radius
-    const track = new THREE.Mesh(
-      // Just inside the coins' path, so the line passes behind them, not across their faces.
-      new THREE.TorusGeometry(ringR - radius * 0.9, 0.35 * u, 6, 160),
-      new THREE.MeshBasicMaterial({transparent: true, opacity: 0, depthWrite: false}),
-    )
-    // Torus lies in XY: +90° makes it flat, + tilt matches the slots' tilt (about x).
-    track.rotation.x = Math.PI / 2 + (cfg.tiltDeg * Math.PI) / 180
-    track.position.y = cfg.height * H
-    track.renderOrder = RenderOrder.ORBIT_PATH
-    root.add(track)
-
-    // The stage: info board above the cap, the chosen coin as its medallion.
     const yTop = profile.at(-1)[0] * H
-    const cardW = cfg.cardMm * u
-    const cardH = cardW * (CARD.h / CARD.w)
-    const stage = new THREE.Group()
-    stage.rotation.order = 'YXZ'
-    stage.position.y = yTop + cfg.stageGapMm * u + cardH / 2
-    root.add(stage)
+
+    // The info panel: an arc of a cylinder just off the label, centred on the logo, turned
+    // to face the viewer every frame. Canvas sized to the panel's real proportions.
+    const arc = (cfg.panelArcDeg * Math.PI) / 180
+    const pr = R * 1.025
+    const ph = cfg.panelMm * u
+    const panelGeo = new THREE.CylinderGeometry(pr, pr, ph, 64, 1, true, -arc / 2, arc)
+    const PW = 1536
+    const PH = Math.round(PW * (ph / (pr * arc)))
+    const panels = new THREE.Group()
+    root.add(panels)
 
     const items = cfg.items.map((it, i) => {
       const faceMat = new THREE.MeshBasicMaterial({map: makeFace(brandFile(`icons/${it.icon}.svg`), colors)})
@@ -243,24 +196,25 @@ export const createTechOrbit = (cfg) => {
         az0: (it.badge.cx / mm.labelWidth - 0.5) * span, // its print
         y0: (0.5 - it.badge.cy / mm.labelHeight) * H,
         slotAz: (i / cfg.items.length) * TAU, // even spacing round the ring
-        delay: cfg.trackMs * 0.6 + i * cfg.staggerMs,
-        p: 0, // 0 on its badge .. 1 in its slot
-        s: 0, // 0 in orbit .. 1 on the stage
+        delay: cfg.trackMs + i * cfg.staggerMs,
+        p: 0, // 0 on its badge .. 1 in its slot (entrance clock)
+        h: 0, // 0 in orbit .. 1 back in its badge while another is chosen
+        pe: 0, // the flight progress actually shown: p, less h
+        s: 0, // 0 in orbit .. 1 hovering on the cap
       }
       const hit = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.6, 10, 8), new THREE.MeshBasicMaterial({visible: false}))
       hit.userData.pick = () => select(entry)
       holder.add(hit)
       entry.hit = hit
 
-      const board = new THREE.Mesh(
-        new THREE.PlaneGeometry(cardW, cardH),
-        new THREE.MeshBasicMaterial({map: makeCard(it, cfg), transparent: true, opacity: 0, depthWrite: false}),
-      )
-      board.renderOrder = RenderOrder.CALLOUT_CARD
-      board.visible = false
-      board.userData.pick = () => select(entry)
-      stage.add(board)
-      entry.board = board
+      const panel = new THREE.Mesh(panelGeo, new THREE.MeshBasicMaterial({
+        map: makePanel(it, cfg, PW, PH), transparent: true, opacity: 0, depthWrite: false,
+      }))
+      panel.renderOrder = RenderOrder.CALLOUT_CARD
+      panel.visible = false
+      panel.userData.pick = () => select(entry)
+      panels.add(panel)
+      entry.panel = panel
       root.add(holder)
 
       if (it.model) {
@@ -282,24 +236,27 @@ export const createTechOrbit = (cfg) => {
           })
           const box = new THREE.Box3().setFromObject(m)
           const dims = box.getSize(new THREE.Vector3())
-          const size = Math.max(dims.x, dims.y, dims.z) || 1
+          // Sized by its MIDDLE dimension: by the largest, the wide headset looked big and
+          // the tall, thin wall small. `size` per item fine-tunes by eye.
+          const mid = [dims.x, dims.y, dims.z].sort((a, b) => a - b)[1] || 1
+          const k = ((radius * 2) / mid) * (it.size ?? 1)
           m.position.sub(box.getCenter(new THREE.Vector3()))
           const grow = new THREE.Group() // animated 0..1; the model keeps its own transform
           grow.add(m)
           const wrap = new THREE.Group()
           wrap.add(grow)
-          wrap.scale.setScalar((radius * 2) / size) // its largest side = the coin's diameter
+          wrap.scale.setScalar(k)
           wrap.visible = false
           holder.add(wrap)
           entry.model = wrap
           entry.grow = grow
-          entry.modelHalf = (dims.y / 2) * ((radius * 2) / size) // half its height, at grow 1
+          entry.modelHalf = (dims.y / 2) * k // half its height, at grow 1
         }).catch((err) => { entry.hasModel = false; console.warn('[AR] tech orbit model failed', it.model, err) })
       }
       return entry
     })
 
-    built = {R, H, u, radius, ringR, track, stage, cardH, items, rimMat}
+    built = {R, H, u, radius, ringR: R * cfg.radius, yTop, panels, items, rimMat}
     return true
   }
 
@@ -307,13 +264,13 @@ export const createTechOrbit = (cfg) => {
     if (!built) return
     const dt = lastMs === null ? 0 : Math.min(timeMs - lastMs, 100) * speed
     lastMs = timeMs
-    const {R, H, u, ringR, items, track, stage} = built
-    const tEnd = cfg.trackMs * 0.6 + (items.length - 1) * cfg.staggerMs + cfg.emergeMs
-    // Leaving: the stage clears first, then the clock runs back.
+    const {R, H, u, ringR, yTop, items, panels} = built
+    const tEnd = cfg.trackMs + (items.length - 1) * cfg.staggerMs + cfg.emergeMs
+    // Leaving: the chosen one comes back first, then the clock runs back.
     if (leaving) selected = null
-    let staged = false
-    for (const it of items) if (it.s > 0.001) staged = true
-    t = leaving ? (staged ? t : Math.max(t - dt * cfg.exitSpeed, 0)) : Math.min(t + dt, tEnd)
+    let busy = false
+    for (const it of items) if (it.s > 0.001 || it.h > 0.001) busy = true
+    t = leaving ? (busy ? t : Math.max(t - dt * cfg.exitSpeed, 0)) : Math.min(t + dt, tEnd)
     turn += ((cfg.speed * TAU) / 1000) * dt
     if (turn > 1e4) turn %= TAU
 
@@ -325,94 +282,78 @@ export const createTechOrbit = (cfg) => {
     const tilt = (cfg.tiltDeg * Math.PI) / 180
     const ringY = cfg.height * H
     const azOff = (cfg.printAzimuthDeg * Math.PI) / 180
+    const hoverY = yTop + cfg.hoverMm * u
+    panels.rotation.y = camAz
+    panels.position.y = cfg.panelY * H
 
-    // Track: draws in first, undraws last.
-    const tr = easeOut(clamp01(t / cfg.trackMs))
-    track.scale.setScalar(lerp(0.85, 1, tr))
-    track.material.opacity = cfg.trackOpacity * tr
-    track.visible = tr > 0.001
-    liveColor(track.material.color, cfg.trackColor)
-
-    // Stage: faces the viewer, leaning back toward them.
-    stage.rotation.y = camAz
-    stage.rotation.x = -Math.atan2(cam.y - stage.position.y, Math.hypot(cam.x, cam.z))
-    stage.updateMatrix()
-    // Where the medallion sits: the board's top edge, a little in front of it.
-    stagePos.set(0, built.cardH / 2, built.radius * 0.6).applyMatrix4(stage.matrix)
-
-    // Room brightness on the unlit faces; the others dim while one is on stage.
+    // Room brightness on the unlit coin faces.
     const L = cameraLight.ready ? cameraLight.luma : 0.18
     faceColor.setScalar(Math.min(1, Math.max(0.45, Math.sqrt(L / 0.18) * cfg.brightness)))
     liveColor(built.rimMat.color, cfg.sideColor)
-    let focus = 0
-    for (const it of items) focus = Math.max(focus, it.s)
-    dimColor.copy(faceColor).multiplyScalar(lerp(1, cfg.dimOthers, focus))
 
     for (const it of items) {
       it.p = easeInOut(clamp01((t - it.delay) / cfg.emergeMs))
       it.s = clamp01(it.s + ((it === selected ? 1 : -1) * dt) / cfg.selectMs)
-      const p = it.p
+      // The others step aside: back into their prints along their own entrance path.
+      it.h = clamp01(it.h + ((selected && selected !== it ? 1 : -1) * dt) / cfg.selectMs)
+      const p = (it.pe = it.p * (1 - easeInOut(it.h)))
       const s = easeInOut(it.s)
-      const visible = p > 0 || (!leaving && t > it.delay)
+      const visible = p > 0 || s > 0
       it.holder.visible = visible
-      it.board.visible = s > 0.001
+      it.panel.visible = s > 0.001
       if (!visible) continue
 
       // Its slot on the (tilted) ring.
       const a = it.slotAz + turn
       slot.set(ringR * Math.sin(a), ringY - ringR * Math.cos(a) * Math.sin(tilt), ringR * Math.cos(a) * Math.cos(tilt))
-      const bob = Math.sin((timeMs / 1000) * TAU * cfg.bobHz + it.slotAz * 3) * cfg.bobMm * u * p * (1 - s)
-      // Carousel depth: bigger passing the front, smaller round the back.
+      const bob = Math.sin((timeMs / 1000) * TAU * cfg.bobHz + it.slotAz * 3) * cfg.bobMm * u * Math.max(p, s)
+      // Carousel depth: a little bigger passing the front, smaller round the back.
       const near = (Math.cos(wrapPi(a - camAz)) + 1) / 2
-      const depthK = lerp(1, lerp(cfg.backScale, cfg.frontScale, near), p * (1 - s))
+      const depthK = lerp(1, lerp(cfg.backScale, cfg.frontScale, near), p)
 
       // Badge -> slot, round the bottle the short way.
       const azPrint = it.az0 + azOff
       const az = azPrint + wrapPi(a - azPrint) * p
       const r = lerp(R * 1.004, Math.hypot(slot.x, slot.z), p)
-      it.holder.position.set(r * Math.sin(az), lerp(it.y0, slot.y, p) + bob, r * Math.cos(az))
-      // Slot -> stage: an arc up and over.
+      it.holder.position.set(r * Math.sin(az), lerp(it.y0, slot.y, p), r * Math.cos(az))
+      // Slot -> above the cap: an arc up and in.
       if (s > 0) {
-        it.holder.position.lerp(stagePos, s)
-        it.holder.position.y += Math.sin(s * Math.PI) * 0.25 * H
+        it.holder.position.x *= 1 - s
+        it.holder.position.z *= 1 - s
+        it.holder.position.y = lerp(it.holder.position.y, hoverY, s) + Math.sin(s * Math.PI) * 0.15 * H
       }
+      it.holder.position.y += bob
 
-      // Facing: outward on the label, then the viewer; on stage, leaning like the board.
+      // Facing: outward on the label, then the viewer.
       const toCam = Math.atan2(cam.x - it.holder.position.x, cam.z - it.holder.position.z)
-      it.holder.rotation.y = az + wrapPi(toCam - az) * p
-      it.holder.rotation.x = stage.rotation.x * s
+      it.holder.rotation.y = az + wrapPi(toCam - az) * Math.max(p, s)
 
-      const scale = lerp(lerp(1, cfg.topScale, p) * depthK, cfg.stageScale, s)
-      const depth = lerp(0.02, cfg.depthMm, p) * u
+      const scale = lerp(lerp(1, cfg.topScale, p) * depthK, cfg.hoverScale, s)
+      const depth = lerp(0.02, cfg.depthMm, Math.max(p, s)) * u
       it.rim.scale.set(1, 1, Math.max(depth, 1e-4))
       it.front.position.z = depth / 2
       it.back.position.z = -depth / 2
       it.coin.visible = !it.hasModel
       it.coin.scale.setScalar(scale)
+      it.coin.position.y = s * built.radius * scale // a coin also sits ON the hover point
       it.hit.scale.setScalar(scale)
+      it.faceMat.color.copy(faceColor)
       if (it.model) {
-        it.model.visible = p > 0
-        // Grows out of its print over the first 60% of the flight (exit: shrinks back in).
-        const grow = backOut(clamp01(p / 0.6)) * scale * cfg.modelScale
+        it.model.visible = true
+        // Grows out of its print over the first 60% of the flight (and shrinks back in).
+        const grow = backOut(clamp01(Math.max(p, s) / 0.6)) * scale * cfg.modelScale
         it.grow.scale.setScalar(grow + 1e-4)
-        // On the board it STANDS on the top edge (centred, a tall model like the robot hung
-        // over the card's text).
-        it.model.position.y = s * it.modelHalf * grow
-        // Spins in orbit; the chosen one turns to face you (the shortest way) for the board,
-        // then only sways a little. Half a turn unwinds during the flight out.
-        if (it === selected) it.yaw += wrapPi(-it.yaw) * Math.min(1, dt / 180)
-        else it.yaw = wrapPi(it.yaw + ((cfg.modelSpin * TAU) / 1000) * dt)
-        const sway = Math.sin((timeMs / 1000) * 0.9) * ((cfg.modelSwayDeg * Math.PI) / 180) * s
-        it.model.rotation.y = it.yaw + (1 - p) * Math.PI + sway
+        it.model.position.y = s * it.modelHalf * grow // hovering: its base on the hover point
+        // Spins all the time; half a turn unwinds during the flight out of the print.
+        it.yaw = wrapPi(it.yaw + ((cfg.modelSpin * TAU) / 1000) * dt)
+        it.model.rotation.y = it.yaw + (1 - Math.max(p, s)) * Math.PI
       }
-      it.faceMat.color.copy(it.s > 0 ? faceColor : dimColor)
 
-      // Board: grows out from the medallion.
-      if (it.board.visible) {
+      // Panel: unfolds from its centre line once the model is on its way up.
+      if (it.panel.visible) {
         const b = easeOut(clamp01((it.s - 0.35) / 0.65))
-        it.board.material.opacity = b
-        it.board.scale.setScalar(lerp(0.6, 1, b))
-        it.board.position.y = lerp(built.cardH * 0.25, 0, b)
+        it.panel.material.opacity = b * cfg.panelOpacity
+        it.panel.scale.set(1, lerp(0.05, 1, b), 1)
       }
     }
   }
@@ -423,7 +364,7 @@ export const createTechOrbit = (cfg) => {
     exit: () => { leaving = true },
     isExited: () => !built || (leaving && t <= 0 && built.items.every(it => it.p <= 0 && it.s <= 0)),
     getPickables: () => (built
-      ? [...built.items.filter(it => it.p > 0.5).map(it => it.hit), ...built.items.filter(it => it.s > 0.5).map(it => it.board)]
+      ? [...built.items.filter(it => it.pe > 0.5 || it.s > 0.5).map(it => it.hit), ...built.items.filter(it => it.s > 0.5).map(it => it.panel)]
       : []),
     setUserSpeed: v => { speed = v },
   }

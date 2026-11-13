@@ -116,26 +116,24 @@ export default {
     },
     // Elements "Tech Orbit": five of the sticker's badges (the ones with a Meshy model) lift
     // off and orbit, evenly spaced (badge = its centre in make-sticker.mjs, mm). The other
-    // three badges stay printed. Pitches: one line each, edit freely.
+    // three badges stay printed. Pitch = ONE short line on the panel (~6 words); edit freely.
     techOrbit: {
-      cardEyebrow: 'Zeal service',
-      cardFooter: 'zealinteractive.in',
       items: [
         {key: 'vr', label: 'Virtual Reality', icon: 'cardboards', badge: {cx: 14.5, cy: 10.4},
           model: 'models/vr-headset.glb', // Meshy, via scripts/optimize-model.mjs
-          pitch: 'Immersive VR setups for events, exhibitions and brand activations.'},
+          pitch: 'Immersive VR for events and brands'},
         {key: 'walls', label: 'Interactive Walls', icon: 'hand-click', badge: {cx: 38, cy: 32.2},
           model: 'models/interactive-wall.glb', // Meshy; full 278k triangles, erode 1 (hides atlas seams on the black screen)
-          pitch: 'Walls that react to touch and movement.'},
+          pitch: 'Walls that react to touch'},
         {key: 'photobooth', label: 'AI Photobooth', icon: 'camera-ai', badge: {cx: 134, cy: 10.4},
           model: 'models/camera.glb', // Meshy; 20% of its 1.04M triangles (full looked the same)
-          pitch: 'AI-styled photos guests take home and share.'},
+          pitch: 'AI-styled photos guests take home'},
         {key: 'vrgames', label: 'VR Games', icon: 'device-gamepad-2', badge: {cx: 38, cy: 10.4},
           model: 'models/game-controller.glb', // Meshy; 40% of its 553k triangles (full looked the same)
-          pitch: 'Multiplayer VR games that pull a crowd to your booth.'},
+          pitch: 'VR games that pull a crowd'},
         {key: 'robotics', label: 'Robotics Hardware', icon: 'robot', badge: {cx: 157.5, cy: 32.2},
           model: 'models/robot.glb', // Meshy; 40% of its 366k triangles (full looked the same)
-          pitch: 'Custom robotics and hardware for live installations.'},
+          pitch: 'Custom robots for live installations'},
       ],
     },
     // The sticker's 8 service badges, scanned off the bottle.
