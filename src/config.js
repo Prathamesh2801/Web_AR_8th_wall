@@ -354,7 +354,7 @@ export const ANIMATIONS = {
     trackMs: 900, // the orbit ring draws in first
     emergeMs: 1300, // one coin, badge -> its slot
     staggerMs: 160, // between coins leaving their badges
-    exitSpeed: 1.8, // x faster home
+    exitSpeed: 1.3, // x faster home
     speed: 0.05, // rev/s
     radius: 1.85, // x bottle radius
     height: 0.1, // x label height above the label centre
@@ -362,9 +362,13 @@ export const ANIMATIONS = {
     topScale: 1.6, // coin size in orbit, x the printed badge
     depthMm: 1.6, // coin thickness
     modelScale: 1.25, // a 3D model (item.model) in place of its coin, x the coin's size
-    bobMm: 0.8,
-    labelMm: 4, // name text height (caps); shown on the near side only
-    trackOpacity: 0.55,
+    modelSpin: 0.12, // a model's own turn in orbit, rev/s
+    frontScale: 1.25, // carousel depth: size passing the front ...
+    backScale: 0.8, // ... and round the back, x its orbit size
+    modelSwayDeg: 15, // on the board: faces you, swaying this far side to side
+    bobMm: 1.6, // up/down while orbiting
+    bobHz: 0.3,
+    trackOpacity: 0, // the drawn orbit line (0 = none; 0.55 = a thin lime ring)
     trackColor: "#9BE23B",
     // Tap: the coin rises onto an info board above the cap.
     selectMs: 750,

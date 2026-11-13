@@ -12,7 +12,7 @@ Today Zeal has NO Elements styles: Supradyn's Orbit and Planted need nutrient da
 switch themselves off for Zeal. Agreed set (2026-11-12): all five below. Suggested first
 three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real work).
 
-### 1. Tech Orbit (Meshy models): BUILT; models 1 of 5 (VR headset)
+### 1. Tech Orbit (Meshy models): BUILT; all 5 models in (final set)
 - Built 2026-11-12 (`src/ar/techOrbit.js`): the 8 printed badges lift off as 3D coins onto
   one evenly spaced orbit ring (drawn track, names on the near side); tap = the coin rises
   onto a glass info board above the cap (pitch from `brand.js`), tap again = back. To use Meshy models: put the GLB in
@@ -70,13 +70,30 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
   smooth shell lumpy / tore seams. The start screen preloads it (src/assets.js), so the
   size costs a few seconds on the Start button, not lag in AR.
   Size in the scene: `techOrbit.modelScale` (TUNE).
-- Models: VR headset DONE (`vr-headset.glb`, v2 white, full mesh, 2026-11-13). To do: controller, robot, camera, hand.
+- Speckles when small (fixed 2026-11-13): Meshy's texture is a mosaic of hundreds of tiny
+  islands packed edge to edge; mipmaps averaged white into the black visor and back. The
+  app loads model textures without mipmaps (techOrbit.js), and the script median-cleans
+  the texture lightly (clean=3) to drop baked-in scratches.
+- Models (2026-11-13): VR headset DONE (`vr-headset.glb`, full 385k mesh, 2.2 MB: its glossy
+  shell showed lumps at any reduction); game controller DONE (`game-controller.glb`, 40% of
+  553k = 220k triangles, 2.2 MB: identical to full at board size, so halve big models when a
+  side-by-side shows no difference); robot DONE (`robot.glb`, 40% of 366k = 146k triangles,
+  985 KB). Meshy ignored the 10k polycount every time. On the info board a model stands ON
+  the top edge (a tall one hung over the text when centred). Camera DONE (`camera.glb`, 20%
+  of 1.04M = 208k triangles, 1.7 MB; ours looks cleaner than the source). In orbit models
+  SWAY ±35° (modelSwayDeg) instead of spinning: AI models' backs are weak (the camera's is
+  a busy panel), being generated from a front view. Interactive wall DONE
+  (`interactive-wall.glb`, full 278k triangles, 1.7 MB, `erode` 1: Meshy atlas gaps showed
+  as white cracks on its black screen), replacing the gesture hand.
+- FINAL (2026-11-13): the orbit shows only the 5 modelled services (VR, Interactive Walls,
+  AI Photobooth, VR Games, Robotics), 72° apart, ordered so the VR pair isn't adjacent; the
+  AR / Gesture / Sensor badges stay printed (Scan still reads all 8).
 - Draft prompts (style line appended to each):
   - VR headset: `compact VR headset with a soft strap`
   - Game controller: `modern game controller, chunky buttons`
   - Robot (orbit): `tiny friendly robot head-and-body, round eyes`
   - Photobooth camera: `retro instant camera, big lens`
-  - Gesture hand: `stylized open hand pointing with index finger`
+  - Interactive wall: `freestanding interactive touchscreen kiosk, glowing touch ripple`
   - Robot Buddy (rig + animate): `small friendly bipedal robot, big round head, short legs,
     T-pose` → Meshy rigging → animations: idle, walk, wave, jump
 

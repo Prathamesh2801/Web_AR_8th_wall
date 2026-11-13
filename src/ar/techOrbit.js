@@ -1,23 +1,22 @@
 /**
  * techOrbit.js — Elements style "Tech Orbit": the label's service badges come to life.
  *
- *   Track   a thin lime orbit ring draws itself round the bottle (gently tilted)
+ *   Track   optional (trackOpacity, off by default): a thin lime ring draws itself round the bottle
  *   Lift    one by one, each printed badge (cfg.items[].badge, mm on the trim label) is
  *           copied as a 3D coin exactly over its print (paper ring, lime rim, green disc,
  *           white icon), thickens and flies into its slot: all coins evenly spaced on ONE
  *           ring that turns as a whole, like a carousel; the occluder hides the far side
- *   Labels  only coins on the near side show their name, strongest at the front, so the
- *           view never fills with overlapping text
+ *   Orbit   models spin on their own axis, bob, and grow toward the front / shrink at the
+ *           back (a carousel's depth); no text in orbit, the name is on the board
  *   Tap     the coin leaves the ring and rises above the cap onto a glass info board (the
  *           coin as its medallion; eyebrow, title, pitch, footer), facing and leaning toward
  *           the viewer; the other coins dim and keep turning round its gap. Tap the board
  *           or coin = back to its slot; tap another coin = swap
- *   Exit    a showing coin goes back first; then every coin flies home onto its badge and
- *           the ring undraws
+ *   Exit    a showing coin goes back first; then every item flies home into its badge
  *
  * Coins are the stand-in until the brand has 3D models: an item with `model` (a GLB in
- * public/brands/<id>/, made with scripts/optimize-model.mjs) swaps its coin for the model
- * once the coin is in orbit. Models are re-shaded with the typography matcap + their own
+ * public/brands/<id>/, made with scripts/optimize-model.mjs) never shows a coin; the model
+ * itself grows out of its printed badge (and shrinks back into it on exit). Models are re-shaded with the typography matcap + their own
  * colour texture: the AR scene has almost no lights, so their PBR material came out dark.
  * Coin faces are unlit art, so their brightness follows the room (cameraLight.js).
  * update() allocates nothing.
@@ -38,6 +37,7 @@ const TAU = Math.PI * 2
 const clamp01 = t => Math.min(Math.max(t, 0), 1)
 const easeInOut = t => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2)
 const easeOut = t => 1 - (1 - t) ** 3
+const backOut = t => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2 // ends with a small overshoot
 const lerp = (a, b, t) => a + (b - a) * t
 const wrapPi = (a) => { a %= TAU; return a > Math.PI ? a - TAU : a < -Math.PI ? a + TAU : a }
 // The printed badge (make-sticker.mjs service()): radii in mm, icon box in mm.
@@ -79,28 +79,6 @@ const makeFace = (iconUrl, colors) => {
   paint(null)
   loadIcon(iconUrl, paint)
   return tex
-}
-
-/** The service name under a coin: an 8:1 sprite whose caps fill ~60% of its height. */
-const LABEL_ASPECT = 8
-const makeLabel = (text) => {
-  const c = document.createElement('canvas')
-  c.width = 1024
-  c.height = 128
-  const ctx = c.getContext('2d')
-  ctx.font = `700 84px ${FONT}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.lineWidth = 16
-  ctx.strokeStyle = 'rgba(6, 30, 14, 0.85)'
-  ctx.strokeText(text, 512, 66)
-  ctx.fillStyle = '#ffffff'
-  ctx.fillText(text, 512, 66)
-  const tex = new THREE.CanvasTexture(c)
-  tex.colorSpace = THREE.SRGBColorSpace
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: tex, transparent: true, depthWrite: false, opacity: 0}))
-  sprite.renderOrder = RenderOrder.LABEL
-  return sprite
 }
 
 /** Wraps `text` to lines no wider than `w` at the context's current font. */
@@ -260,7 +238,8 @@ export const createTechOrbit = (cfg) => {
       holder.add(coin)
       const entry = {
         holder, coin, front, back, rim, faceMat, model: null, grow: null,
-        label: makeLabel(it.label),
+        hasModel: !!it.model, // no coin at all; cleared if the GLB fails
+        yaw: (i / cfg.items.length) * TAU, // the model's own spin
         az0: (it.badge.cx / mm.labelWidth - 0.5) * span, // its print
         y0: (0.5 - it.badge.cy / mm.labelHeight) * H,
         slotAz: (i / cfg.items.length) * TAU, // even spacing round the ring
@@ -282,7 +261,7 @@ export const createTechOrbit = (cfg) => {
       board.userData.pick = () => select(entry)
       stage.add(board)
       entry.board = board
-      root.add(holder, entry.label)
+      root.add(holder)
 
       if (it.model) {
         loader.loadAsync(brandFile(it.model)).then((g) => {
@@ -290,7 +269,14 @@ export const createTechOrbit = (cfg) => {
           m.traverse((o) => {
             if (!o.isMesh) return
             const old = o.material
-            if (old.map) old.map.anisotropy = 8 // seen at angles as it turns
+            if (old.map) {
+              // No mipmaps: AI texture atlases pack hundreds of tiny islands edge to edge, so
+              // the smaller mip levels average white into the black visor (and back): the
+              // model looked speckled/"broken" at orbit size. Plain linear is clean here.
+              old.map.generateMipmaps = false
+              old.map.minFilter = THREE.LinearFilter
+              old.map.needsUpdate = true
+            }
             o.material = new THREE.MeshMatcapMaterial({matcap: modelMatcap(), map: old.map ?? null, color: old.map ? 0xffffff : old.color})
             old.dispose()
           })
@@ -307,7 +293,8 @@ export const createTechOrbit = (cfg) => {
           holder.add(wrap)
           entry.model = wrap
           entry.grow = grow
-        }).catch(err => console.warn('[AR] tech orbit model failed', it.model, err))
+          entry.modelHalf = (dims.y / 2) * ((radius * 2) / size) // half its height, at grow 1
+        }).catch((err) => { entry.hasModel = false; console.warn('[AR] tech orbit model failed', it.model, err) })
       }
       return entry
     })
@@ -368,14 +355,16 @@ export const createTechOrbit = (cfg) => {
       const s = easeInOut(it.s)
       const visible = p > 0 || (!leaving && t > it.delay)
       it.holder.visible = visible
-      it.label.visible = visible
       it.board.visible = s > 0.001
       if (!visible) continue
 
       // Its slot on the (tilted) ring.
       const a = it.slotAz + turn
       slot.set(ringR * Math.sin(a), ringY - ringR * Math.cos(a) * Math.sin(tilt), ringR * Math.cos(a) * Math.cos(tilt))
-      const bob = Math.sin((timeMs / 1000) * TAU * 0.35 + it.slotAz * 3) * cfg.bobMm * u * p * (1 - s)
+      const bob = Math.sin((timeMs / 1000) * TAU * cfg.bobHz + it.slotAz * 3) * cfg.bobMm * u * p * (1 - s)
+      // Carousel depth: bigger passing the front, smaller round the back.
+      const near = (Math.cos(wrapPi(a - camAz)) + 1) / 2
+      const depthK = lerp(1, lerp(cfg.backScale, cfg.frontScale, near), p * (1 - s))
 
       // Badge -> slot, round the bottle the short way.
       const azPrint = it.az0 + azOff
@@ -393,27 +382,30 @@ export const createTechOrbit = (cfg) => {
       it.holder.rotation.y = az + wrapPi(toCam - az) * p
       it.holder.rotation.x = stage.rotation.x * s
 
-      const scale = lerp(lerp(1, cfg.topScale, p), cfg.stageScale, s)
+      const scale = lerp(lerp(1, cfg.topScale, p) * depthK, cfg.stageScale, s)
       const depth = lerp(0.02, cfg.depthMm, p) * u
       it.rim.scale.set(1, 1, Math.max(depth, 1e-4))
       it.front.position.z = depth / 2
       it.back.position.z = -depth / 2
-      const swap = it.model ? clamp01((p - 0.7) / 0.3) : 0 // a model takes over in orbit
-      it.coin.scale.setScalar(scale * (1 - swap) + 1e-4)
+      it.coin.visible = !it.hasModel
+      it.coin.scale.setScalar(scale)
       it.hit.scale.setScalar(scale)
       if (it.model) {
-        it.model.visible = swap > 0
-        it.grow.scale.setScalar(swap * scale * cfg.modelScale + 1e-4)
-        it.model.rotation.y = (timeMs / 1000) * 1.2
+        it.model.visible = p > 0
+        // Grows out of its print over the first 60% of the flight (exit: shrinks back in).
+        const grow = backOut(clamp01(p / 0.6)) * scale * cfg.modelScale
+        it.grow.scale.setScalar(grow + 1e-4)
+        // On the board it STANDS on the top edge (centred, a tall model like the robot hung
+        // over the card's text).
+        it.model.position.y = s * it.modelHalf * grow
+        // Spins in orbit; the chosen one turns to face you (the shortest way) for the board,
+        // then only sways a little. Half a turn unwinds during the flight out.
+        if (it === selected) it.yaw += wrapPi(-it.yaw) * Math.min(1, dt / 180)
+        else it.yaw = wrapPi(it.yaw + ((cfg.modelSpin * TAU) / 1000) * dt)
+        const sway = Math.sin((timeMs / 1000) * 0.9) * ((cfg.modelSwayDeg * Math.PI) / 180) * s
+        it.model.rotation.y = it.yaw + (1 - p) * Math.PI + sway
       }
       it.faceMat.color.copy(it.s > 0 ? faceColor : dimColor)
-
-      // Name: near side only, strongest at the front; gone while on stage.
-      const near = Math.max(0, Math.cos(wrapPi(a - camAz)))
-      const lh = (cfg.labelMm / 0.6) * u
-      it.label.scale.set(lh * LABEL_ASPECT, lh, 1)
-      it.label.position.set(it.holder.position.x, it.holder.position.y - built.radius * scale - lh * 0.45, it.holder.position.z)
-      it.label.material.opacity = clamp01((p - 0.6) / 0.4) * clamp01((near - 0.35) / 0.4) * (1 - s) * lerp(1, 0.35, focus)
 
       // Board: grows out from the medallion.
       if (it.board.visible) {

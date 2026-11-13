@@ -114,9 +114,9 @@ export default {
       glowColor: LIME,
       ringColor: LIME,
     },
-    // Elements "Tech Orbit": the sticker's 8 badges lift off and orbit (badge = its centre
-    // in make-sticker.mjs, mm). `model: 'models/<x>.glb'` later swaps a coin for a Meshy
-    // model (brand-assets/zeal/IDEAS.md). Pitches: one line each, edit freely.
+    // Elements "Tech Orbit": five of the sticker's badges (the ones with a Meshy model) lift
+    // off and orbit, evenly spaced (badge = its centre in make-sticker.mjs, mm). The other
+    // three badges stay printed. Pitches: one line each, edit freely.
     techOrbit: {
       cardEyebrow: 'Zeal service',
       cardFooter: 'zealinteractive.in',
@@ -124,19 +124,17 @@ export default {
         {key: 'vr', label: 'Virtual Reality', icon: 'cardboards', badge: {cx: 14.5, cy: 10.4},
           model: 'models/vr-headset.glb', // Meshy, via scripts/optimize-model.mjs
           pitch: 'Immersive VR setups for events, exhibitions and brand activations.'},
-        {key: 'vrgames', label: 'VR Games', icon: 'device-gamepad-2', badge: {cx: 38, cy: 10.4},
-          pitch: 'Multiplayer VR games that pull a crowd to your booth.'},
-        {key: 'ar', label: 'AR Experiences', icon: 'augmented-reality', badge: {cx: 14.5, cy: 32.2},
-          pitch: 'Augmented reality that brings products and spaces to life, like this bottle.'},
         {key: 'walls', label: 'Interactive Walls', icon: 'hand-click', badge: {cx: 38, cy: 32.2},
+          model: 'models/interactive-wall.glb', // Meshy; full 278k triangles, erode 1 (hides atlas seams on the black screen)
           pitch: 'Walls that react to touch and movement.'},
         {key: 'photobooth', label: 'AI Photobooth', icon: 'camera-ai', badge: {cx: 134, cy: 10.4},
+          model: 'models/camera.glb', // Meshy; 20% of its 1.04M triangles (full looked the same)
           pitch: 'AI-styled photos guests take home and share.'},
-        {key: 'gesture', label: 'Gesture Tech', icon: 'hand-move', badge: {cx: 157.5, cy: 10.4},
-          pitch: 'Control content with a wave of the hand.'},
-        {key: 'sensor', label: 'Sensor Games', icon: 'radar-2', badge: {cx: 134, cy: 32.2},
-          pitch: 'Motion-sensor games that get people moving.'},
+        {key: 'vrgames', label: 'VR Games', icon: 'device-gamepad-2', badge: {cx: 38, cy: 10.4},
+          model: 'models/game-controller.glb', // Meshy; 40% of its 553k triangles (full looked the same)
+          pitch: 'Multiplayer VR games that pull a crowd to your booth.'},
         {key: 'robotics', label: 'Robotics Hardware', icon: 'robot', badge: {cx: 157.5, cy: 32.2},
+          model: 'models/robot.glb', // Meshy; 40% of its 366k triangles (full looked the same)
           pitch: 'Custom robotics and hardware for live installations.'},
       ],
     },

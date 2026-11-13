@@ -2,7 +2,7 @@
  * Turns a raw AI-generated GLB (Meshy etc.: ~400k triangles, three 2048 px PBR maps,
  * ~20 MB) into a web one (~2 MB) WITHOUT visible loss, for an AR effect.
  *
- *   node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles=0] [texture=1536] [error=0.0005]
+ *   node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles=0] [texture=1536] [error=0.0005] [clean=3] [erode=0]
  *
  * triangles 0 (default) = keep the full mesh. Simplifying is opt-in: on the white VR headset
  * EVERY simplification showed (16k: lumpy + torn seams; 116k / 193k: lumps on the smooth
@@ -28,7 +28,7 @@ import sharp from 'sharp'
 import {NodeIO} from '@gltf-transform/core'
 import {ALL_EXTENSIONS, EXTTextureWebP} from '@gltf-transform/extensions'
 
-const [input, output, tris = '0', tex = '1536', err = '0.0005'] = process.argv.slice(2)
+const [input, output, tris = '0', tex = '1536', err = '0.0005', clean = '3', erode = '0'] = process.argv.slice(2)
 if (!input || !output) {
   console.error('usage: node scripts/optimize-model.mjs <in.glb> <out.glb> [triangles, 0 = keep all] [texture px] [error]')
   process.exit(1)
@@ -47,7 +47,14 @@ for (const t of root.listTextures()) if (!t.listParents().some(p => p !== root))
 doc.createExtension(EXTTextureWebP).setRequired(true)
 for (const t of root.listTextures()) {
   // Buffer.from: getImage() is a view into the GLB's buffer.
-  t.setImage(await sharp(Buffer.from(t.getImage())).resize(+tex, +tex, {fit: 'inside'}).webp({quality: 82}).toBuffer())
+  let img = sharp(Buffer.from(t.getImage())).resize(+tex, +tex, {fit: 'inside'})
+  // clean > 0: median filter of that size (odd px) removes the fine scratches / specks AI
+  // textures bake in, which turn into flickering noise when the model is small on screen.
+  if (+clean > 0) img = img.median(+clean)
+  // erode > 0: spreads dark texels by that many px (sharp names that dilate). Meshy's atlas gaps are light grey, and
+  // on a dark face (the interactive wall's black screen) they show as white seam lines.
+  if (+erode > 0) img = img.dilate(+erode)
+  t.setImage(await img.webp({quality: 82}).toBuffer())
   t.setMimeType('image/webp')
 }
 const tmp = mkdtempSync(join(tmpdir(), 'model-'))

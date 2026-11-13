@@ -13,7 +13,7 @@ npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
 npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
-node scripts/optimize-model.mjs <in.glb> <out.glb> [tris=0] [px]  # raw Meshy GLB (~20 MB) -> web GLB (~2 MB): colour map only (WebP), FULL mesh, meshopt (simplifying made smooth models lumpy)
+node scripts/optimize-model.mjs <in.glb> <out.glb> [tris=0] [px] [error] [clean=3] [erode=0]  # raw Meshy GLB (~20 MB) -> web GLB (~2 MB): colour map only (WebP), FULL mesh, meshopt (simplifying made smooth models lumpy)
 ```
 
 Append `?debug` to the URL to get the TUNE button: the dashboard (src/components/ar/Dashboard.jsx).
@@ -49,7 +49,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   scan.js               Effects style "Scan": scan line climbs/descends revealing a hologram grid (lathed profile), laser sheet, nutrient readouts type out, "Formula scanned" verdict
   sparkle.js            Effects style "Sparkle": cap flash, brand-colour stars burst + swirl + settle into orbit (all motion in the shader); exit rewinds time
   cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 64 px, upright), for lit effects; paperAt() = the real paper colour under a screen box
-  techOrbit.js          Elements style "Tech Orbit": the label's printed service badges lift off as 3D coins (icon art), one evenly spaced ring (drawn track, near-side labels), tap = coin rises onto an in-scene info board above the cap; an item's `model` GLB replaces its coin in orbit
+  techOrbit.js          Elements style "Tech Orbit": the label's printed service badges lift off as 3D coins (icon art), one evenly spaced ring (models spin, bob, grow at the front / shrink at the back; no text in orbit), tap = it rises onto an in-scene info board above the cap; an item's `model` GLB grows out of its badge in place of a coin
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty
