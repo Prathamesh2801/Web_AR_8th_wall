@@ -117,22 +117,24 @@ export default {
     // Elements "Tech Orbit": five of the sticker's badges (the ones with a Meshy model) lift
     // off and orbit, evenly spaced (badge = its centre in make-sticker.mjs, mm). The other
     // three badges stay printed. Pitch = ONE short line on the panel (~6 words); edit freely.
+    // size = MEASURED: each model's screen area averaged over a full spin, equalised (the wall
+    // covered ~2x the others). Re-measure if a model is replaced.
     techOrbit: {
       items: [
         {key: 'vr', label: 'Virtual Reality', icon: 'cardboards', badge: {cx: 14.5, cy: 10.4},
-          model: 'models/vr-headset.glb', // Meshy, via scripts/optimize-model.mjs
+          model: 'models/vr-headset.glb', size: 1.12, // Meshy, via scripts/optimize-model.mjs
           pitch: 'Immersive VR for events and brands'},
         {key: 'walls', label: 'Interactive Walls', icon: 'hand-click', badge: {cx: 38, cy: 32.2},
-          model: 'models/interactive-wall.glb', // Meshy; full 278k triangles, erode 1 (hides atlas seams on the black screen)
+          model: 'models/interactive-wall.glb', size: 0.77, // Meshy; full 278k triangles, erode 1 (hides atlas seams on the black screen)
           pitch: 'Walls that react to touch'},
         {key: 'photobooth', label: 'AI Photobooth', icon: 'camera-ai', badge: {cx: 134, cy: 10.4},
-          model: 'models/camera.glb', // Meshy; 20% of its 1.04M triangles (full looked the same)
+          model: 'models/camera.glb', size: 1.11, // Meshy; 20% of its 1.04M triangles (full looked the same)
           pitch: 'AI-styled photos guests take home'},
         {key: 'vrgames', label: 'VR Games', icon: 'device-gamepad-2', badge: {cx: 38, cy: 10.4},
-          model: 'models/game-controller.glb', // Meshy; 40% of its 553k triangles (full looked the same)
+          model: 'models/game-controller.glb', size: 1.15, // Meshy; 40% of its 553k triangles (full looked the same)
           pitch: 'VR games that pull a crowd'},
         {key: 'robotics', label: 'Robotics Hardware', icon: 'robot', badge: {cx: 157.5, cy: 32.2},
-          model: 'models/robot.glb', // Meshy; 40% of its 366k triangles (full looked the same)
+          model: 'models/robot.glb', size: 1.02, // Meshy; 40% of its 366k triangles (full looked the same)
           pitch: 'Custom robots for live installations'},
       ],
     },

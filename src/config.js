@@ -33,7 +33,7 @@
  * `renderOrder` from src/ar/renderOrder.js (or they flicker against each other).
  */
 
-import {BRANDS} from './brands/index.js'
+import { BRANDS } from "./brands/index.js";
 
 /**
  * WHICH BRAND / PRODUCT THIS BUILD RUNS AS — the one line to change.
@@ -63,7 +63,10 @@ const profile = BOTTLE_MM.profile.map(([h, r]) => [
 
 export const PRODUCT = {
   mm: BOTTLE_MM,
-  label: {...BRAND.label, image: BRAND.label?.image && brandFile(BRAND.label.image)}, // flat artwork: {source, px, image (served)}
+  label: {
+    ...BRAND.label,
+    image: BRAND.label?.image && brandFile(BRAND.label.image),
+  }, // flat artwork: {source, px, image (served)}
   profile,
   /** Bottle radius (label radii) at height y (label heights), clamped to base..cap. */
   radiusAt: (y) => {
@@ -82,12 +85,15 @@ export const PRODUCT = {
 /** Everything the 2D UI says about the product (from the brand file). */
 export const EXPERIENCE = {
   ...BRAND.experience,
-  heroImage: BRAND.experience.heroImage ? brandFile(BRAND.experience.heroImage) : "",
+  heroImage: BRAND.experience.heroImage
+    ? brandFile(BRAND.experience.heroImage)
+    : "",
   logo: BRAND.experience.logo ? brandFile(BRAND.experience.logo) : "",
   model: BRAND.experience.model && {
     ...BRAND.experience.model,
     label: brandFile(BRAND.experience.model.label),
-    capTop: BRAND.experience.model.capTop && brandFile(BRAND.experience.model.capTop),
+    capTop:
+      BRAND.experience.model.capTop && brandFile(BRAND.experience.model.capTop),
   },
 };
 
@@ -152,9 +158,9 @@ export const AnimationId = {
  * a new ANIMATIONS entry with the same `group` — it appears in the tray automatically.
  */
 export const GROUPS = [
-  {id: "type", label: "Typography"},
-  {id: "elements", label: "Elements"},
-  {id: "glow", label: "Effects"},
+  { id: "type", label: "Typography" },
+  { id: "elements", label: "Elements" },
+  { id: "glow", label: "Effects" },
 ];
 
 /**
@@ -352,28 +358,37 @@ export const ANIMATIONS = {
     // Orbit: ONE ring, items evenly spaced, turning as a whole (no drawn line: one through
     // the real table looked fake).
     trackMs: 500, // lead-in before the first item leaves its badge
-    emergeMs: 1300, // one coin, badge -> its slot
-    staggerMs: 160, // between coins leaving their badges
+    emergeMs: 4000, // one item: badge -> its slot (materializing on the way)
+    springHz: 2.2, // the items spring after their path: lower = lazier, more overshoot
+    springDamping: 0.7, // 1 = no overshoot
+    staggerMs: 260, // between items leaving their badges
     exitSpeed: 1.3, // x faster home
-    speed: 0.05, // rev/s
+    speed: 0.05, // rev/s (auto turn; a swipe can reverse its direction)
+    dragTurns: 0.5, // swipe: one screen width turns the ring this much
+    flickEaseMs: 900, // a flick's extra speed fades back to the auto turn over ~this
+    flickMaxTurns: 1.2, // fastest flick, rev/s
     radius: 1.85, // x bottle radius
     height: 0.1, // x label height above the label centre
     tiltDeg: 12, // ring tilt (front dips, back rises)
-    topScale: 1.6, // coin size in orbit, x the printed badge
+    topScale: 1.45, // size in orbit, x the printed badge
     depthMm: 1.6, // coin thickness
     modelScale: 1.25, // a 3D model (item.model) in place of its coin, x the coin's size
     modelSpin: 0.12, // a model's own turn, rev/s
-    frontScale: 1.1, // carousel depth: size passing the front ...
+    frontScale: 1.2, // carousel depth: size passing the front ...
     backScale: 0.9, // ... and round the back (the camera's perspective adds its own)
     bobMm: 1.6, // up/down
     bobHz: 0.3,
-    // Tap: it hovers above the cap; the others shrink back into their prints; the panel shows.
+    rimGlow: 0.45, // lime light on the models' edges (0 = off)
+    glowColor: "#9BE23B", // rim glow + hologram
+    holoLines: 60, // hologram scan lines over a model's height
+    // Tap: it hovers above the cap, the panel shows; the others orbit on, smaller (tap one = swap).
     selectMs: 750,
     hoverMm: 8, // cap top -> its base
-    hoverScale: 2.2, // x the printed badge (orbit is topScale)
+    hoverScale: 1.7, // x the printed badge (orbit is topScale)
+    othersScale: 0.7, // the rest while one is chosen, x their orbit size
     panelMm: 30, // panel height
     panelArcDeg: 140, // panel width, round the bottle (text keeps to its middle)
-    panelY: 0.15, // panel centre, x label height above the label centre (Zeal: logo + ZEAL)
+    panelY: 0.2, // panel centre, x label height above the label centre (Zeal: logo + ZEAL)
     panelOpacity: 1, // the glass colours (cardTop/cardBottom) carry their own see-through
     cardTop: "rgba(18, 64, 34, 0.92)",
     cardBottom: "rgba(6, 30, 14, 0.94)",
@@ -580,17 +595,24 @@ merge(ANIMATIONS, BRAND.animations ?? {});
 const hasNutrients = (BRAND.nutrients?.NUTRIENTS?.length ?? 0) > 0;
 const hasAny = (o) => Object.keys(o ?? {}).length > 0;
 const needs = {
-  [AnimationId.TYPOGRAPHY]: hasAny(ANIMATIONS[AnimationId.TYPOGRAPHY].words) && !!BRAND.label?.px,
+  [AnimationId.TYPOGRAPHY]:
+    hasAny(ANIMATIONS[AnimationId.TYPOGRAPHY].words) && !!BRAND.label?.px,
   [AnimationId.CALLOUTS]: hasAny(ANIMATIONS[AnimationId.CALLOUTS].items),
   [AnimationId.TICKER]: hasAny(ANIMATIONS[AnimationId.TICKER].rings),
   [AnimationId.LABEL_SPIN]: !!BRAND.label?.image,
-  [AnimationId.TECH_ORBIT]: (ANIMATIONS[AnimationId.TECH_ORBIT].items?.length ?? 0) > 0,
-  [AnimationId.LOGO_LIFT]: !!(ANIMATIONS[AnimationId.LOGO_LIFT].mark && ANIMATIONS[AnimationId.LOGO_LIFT].print),
+  [AnimationId.TECH_ORBIT]:
+    (ANIMATIONS[AnimationId.TECH_ORBIT].items?.length ?? 0) > 0,
+  [AnimationId.LOGO_LIFT]: !!(
+    ANIMATIONS[AnimationId.LOGO_LIFT].mark &&
+    ANIMATIONS[AnimationId.LOGO_LIFT].print
+  ),
   [AnimationId.NUTRIENT_ORBIT]: hasNutrients,
-  [AnimationId.SCAN]: hasNutrients || ANIMATIONS[AnimationId.SCAN].readouts.length > 0,
+  [AnimationId.SCAN]:
+    hasNutrients || ANIMATIONS[AnimationId.SCAN].readouts.length > 0,
   [AnimationId.PLANTED]: hasNutrients,
 };
-for (const [id, ok] of Object.entries(needs)) if (!ok) ANIMATIONS[id].enabled = false;
+for (const [id, ok] of Object.entries(needs))
+  if (!ok) ANIMATIONS[id].enabled = false;
 
 /** Ids of every enabled animation, in declaration order. */
 export const enabledAnimationIds = () =>

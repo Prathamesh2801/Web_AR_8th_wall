@@ -110,3 +110,8 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
   the other four shrink back into their prints, and a curved glass panel on the body over the
   logo shows the name + a ~6-word pitch (the old board above the cap crowded the top and read
   blurry: small type on a small card).
+- Entry + glow (2026-11-13): sizes MEASURED (screen area averaged over a full spin, equalised;
+  the wall covered ~2x the others) into each item's `size`; one badge->slot path with the
+  holder on a damped spring (springHz/springDamping: soft overshoot); each model is born as a
+  lime scan-line hologram that materializes bottom->top while spinning fast then settling; lime
+  fresnel rim glow on every model (rimGlow). Shader patch: patchHolo in techOrbit.js.

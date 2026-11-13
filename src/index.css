@@ -60,6 +60,7 @@ body {
  * never pops a selection bubble.
  */
 #camerafeed {
+  touch-action: none; /* swipes turn effects (Tech Orbit); the browser must not take them as pan/zoom */
   -webkit-user-select: none;
   user-select: none;
   position: fixed;

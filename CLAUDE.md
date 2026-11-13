@@ -31,7 +31,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   startAR.js            loads targets, configures XR8, registers pipeline modules
   imageTargetPipelineModule.js   image events -> lead target -> bottleScene + store
   leadTarget.js         picks which of the overlapping label crops drives the pose (+ test)
-  bottleScene.js        anchor, pose smoothing, occlusion, runs animations, tap picking
+  bottleScene.js        anchor, pose smoothing, occlusion, runs animations, tap picking; a press that moves = swipe -> active effects' optional drag(dx)/release()
   occlusionProxy.js     invisible depth model of the bottle (lathed PRODUCT.profile)
   renderOrder.js        fixed draw order for every transparent layer
   animations/index.js   id -> factory registry
@@ -49,7 +49,7 @@ src/ar/               engine + three.js. NO React imports in this folder.
   scan.js               Effects style "Scan": scan line climbs/descends revealing a hologram grid (lathed profile), laser sheet, nutrient readouts type out, "Formula scanned" verdict
   sparkle.js            Effects style "Sparkle": cap flash, brand-colour stars burst + swirl + settle into orbit (all motion in the shader); exit rewinds time
   cameraLight.js        mean colour/brightness of the camera image (XR8.CameraPixelArray, 64 px, upright), for lit effects; paperAt() = the real paper colour under a screen box
-  techOrbit.js          Elements style "Tech Orbit": the label's printed service badges lift off as 3D coins (icon art), one evenly spaced ring (models spin, bob, slightly bigger at the front; no line, no text; sized by their middle dimension), tap = it hovers spinning above the cap, the others shrink back into their prints, and a curved glass panel on the body (over the logo) shows name + one-line pitch; an item's `model` GLB grows out of its badge in place of a coin
+  techOrbit.js          Elements style "Tech Orbit": the label's printed service badges lift off as 3D coins (icon art), one evenly spaced ring (each model born as a lime scan-line hologram that springs out and materializes; spin, bob, ~20% bigger at the front, lime rim glow; swipe left/right turns the ring, a flick sets its direction, it never stops; no line, no text; sizes measured per model), tap = it hovers spinning above the cap, the others orbit on smaller (tap one = swap), and a curved glass panel on the body (over the logo) shows name + one-line pitch; an item's `model` GLB grows out of its badge in place of a coin
   nutrientSystem.js     animation: nutrients emerge from the surface, orbit along the bottle's curve (tap for card; off until chosen)
   settleEffect.js       animation: halo measured from the real silhouette, rises + blooms outward, settles (off until chosen)
   nutrientData.js       the active brand's nutrients (src/brands/<id>/nutrients.js), or empty

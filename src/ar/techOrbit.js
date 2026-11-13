@@ -1,15 +1,20 @@
 /**
  * techOrbit.js — Elements style "Tech Orbit": the label's service badges come to life.
  *
- *   Lift    one by one, each printed badge (cfg.items[].badge, mm on the trim label) grows
- *           out of its print and flies into its slot: all items evenly spaced on ONE ring
+ *   Lift    one by one, each printed badge (cfg.items[].badge, mm on the trim label) is born
+ *           as a lime hologram that springs out into its slot (one path, a damped spring
+ *           follows it: soft overshoot) and materializes bottom -> top on the way, spinning
+ *           fast then settling; all evenly spaced on ONE ring
  *           that turns as a whole, like a carousel; the occluder hides the far side
  *   Orbit   models spin on their own axis, bob, and are a little bigger passing the front
- *           (frontScale / backScale); no line, no text in orbit
- *   Tap     it arcs up and hovers, spinning, above the cap; the others shrink back into
- *           their prints; a curved glass panel unfolds on the body over the logo with the
+ *           (frontScale / backScale); a lime rim glow on their edges (patchHolo); swipe left/
+ *           right turns the ring (drag 1:1, flick momentum, then the auto turn runs the way it
+ *           was flicked: it never stops); no line,
+ *           no text in orbit
+ *   Tap     it arcs up and hovers, spinning, above the cap; the others orbit on, smaller
+ *           (tap one = swap); a curved glass panel unfolds on the body over the logo with the
  *           name + one short line (big type: a small board above the cap read blurry).
- *           Tap the model or the panel = back; the others grow out again
+ *           Tap the model or the panel = back
  *   Exit    a chosen item goes back first; then every item shrinks home into its badge
  *
  * Coins are the stand-in when an item has no `model` (a GLB in public/brands/<id>/, made
@@ -78,6 +83,33 @@ const makeFace = (iconUrl, colors) => {
   return tex
 }
 
+/**
+ * A model's matcap material, plus two looks driven by `shared` uniforms:
+ * - materialize: above the uReveal height (0 = bottom .. 1 = top of the mesh) it is a lime
+ *   scan-line hologram, below it the real model, with a bright band at the edge. The lines
+ *   are cut with discard, so it stays opaque (no transparency sorting inside the model).
+ * - rim glow: a soft lime fresnel light on its silhouette (uRim), always on.
+ */
+const patchHolo = (mat, shared, minY, maxY) => {
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, shared, {uMinY: {value: minY}, uMaxY: {value: maxY}})
+    sh.vertexShader = 'varying float vLocalY;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vLocalY = position.y;')
+    sh.fragmentShader = 'uniform float uReveal, uRim, uLines, uMinY, uMaxY;\nuniform vec3 uGlow;\nvarying float vLocalY;\n' +
+      sh.fragmentShader.replace('#include <opaque_fragment>', `
+  float yN = (vLocalY - uMinY) / max(uMaxY - uMinY, 1e-6);
+  float fres = pow(1.0 - abs(dot(normal, viewDir)), 2.5);
+  outgoingLight += uGlow * fres * uRim;
+  if (uReveal < 0.999) {
+    if (yN > uReveal) {
+      if (fract(yN * uLines) > 0.55) discard;
+      outgoingLight = uGlow * (0.35 + 1.5 * fres);
+    }
+    outgoingLight = mix(outgoingLight, uGlow * 1.8, smoothstep(0.035, 0.0, abs(yN - uReveal)));
+  }
+  #include <opaque_fragment>`)
+  }
+}
+
 /** The info panel's art: name + one short line on dark glass, lime edge. */
 const makePanel = (item, cfg, w, h) => {
   const c = document.createElement('canvas')
@@ -138,10 +170,19 @@ export const createTechOrbit = (cfg) => {
   let t = 0 // entrance clock, ms; runs back on exit
   let leaving = false
   let turn = 0 // the ring's rotation, rad
+  // Swipe: the finger turns the ring 1:1; a flick keeps it going, easing back to the
+  // normal turn, which then runs the way it was last flicked. Never stops.
+  let dir = 1 // +1 / -1: the auto-turn's direction
+  let spin = null // current ring speed, rad/ms (null = not set yet: the auto speed)
+  let dragging = false
+  let dragVel = 0 // finger speed, rad/ms (smoothed)
+  let dragAt = 0 // ms of the last drag move
   let selected = null // item hovering on the cap (or heading there)
   const cam = new THREE.Vector3()
   const faceColor = new THREE.Color()
   const slot = new THREE.Vector3()
+  const target = new THREE.Vector3()
+  const acc = new THREE.Vector3()
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
   let matcapTex = null
   const modelMatcap = () => (matcapTex ??= makeMatcap())
@@ -201,6 +242,10 @@ export const createTechOrbit = (cfg) => {
         h: 0, // 0 in orbit .. 1 back in its badge while another is chosen
         pe: 0, // the flight progress actually shown: p, less h
         s: 0, // 0 in orbit .. 1 hovering on the cap
+        vel: new THREE.Vector3(), // the holder springs after its target (see update)
+        fresh: true, // snap onto the target when it (re)appears
+        // The model's shader (patchHolo), shared by all its meshes.
+        holo: {uReveal: {value: 0}, uRim: {value: 0}, uLines: {value: 60}, uGlow: {value: new THREE.Color()}},
       }
       const hit = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.6, 10, 8), new THREE.MeshBasicMaterial({visible: false}))
       hit.userData.pick = () => select(entry)
@@ -232,6 +277,8 @@ export const createTechOrbit = (cfg) => {
               old.map.needsUpdate = true
             }
             o.material = new THREE.MeshMatcapMaterial({matcap: modelMatcap(), map: old.map ?? null, color: old.map ? 0xffffff : old.color})
+            o.geometry.computeBoundingBox()
+            patchHolo(o.material, entry.holo, o.geometry.boundingBox.min.y, o.geometry.boundingBox.max.y)
             old.dispose()
           })
           const box = new THREE.Box3().setFromObject(m)
@@ -269,10 +316,15 @@ export const createTechOrbit = (cfg) => {
     // Leaving: the chosen one comes back first, then the clock runs back.
     if (leaving) selected = null
     let busy = false
-    for (const it of items) if (it.s > 0.001 || it.h > 0.001) busy = true
+    for (const it of items) if (it.s > 0.001) busy = true
     t = leaving ? (busy ? t : Math.max(t - dt * cfg.exitSpeed, 0)) : Math.min(t + dt, tEnd)
-    turn += ((cfg.speed * TAU) / 1000) * dt
-    if (turn > 1e4) turn %= TAU
+    const auto = (dir * cfg.speed * TAU) / 1000
+    spin ??= auto
+    if (!dragging) {
+      spin += (auto - spin) * (1 - Math.exp(-dt / cfg.flickEaseMs)) // a flick fades to the auto turn
+      turn += spin * dt
+    }
+    if (Math.abs(turn) > 1e4) turn %= TAU
 
     let camAz = 0
     if (camera) {
@@ -292,16 +344,21 @@ export const createTechOrbit = (cfg) => {
     liveColor(built.rimMat.color, cfg.sideColor)
 
     for (const it of items) {
-      it.p = easeInOut(clamp01((t - it.delay) / cfg.emergeMs))
+      it.p = clamp01((t - it.delay) / cfg.emergeMs) // linear; each phase below eases itself
       it.s = clamp01(it.s + ((it === selected ? 1 : -1) * dt) / cfg.selectMs)
-      // The others step aside: back into their prints along their own entrance path.
+      // While another is chosen the rest keep orbiting, smaller (and still tappable: tap one
+      // to swap it onto the cap).
       it.h = clamp01(it.h + ((selected && selected !== it ? 1 : -1) * dt) / cfg.selectMs)
-      const p = (it.pe = it.p * (1 - easeInOut(it.h)))
+      const p = (it.pe = it.p)
       const s = easeInOut(it.s)
+      // ONE path badge -> slot (out a little ahead of round, so it clears the label); the
+      // holder springs after it (below), which gives the soft overshoot and settle.
+      const out = easeOut(p)
+      const glide = easeInOut(p)
       const visible = p > 0 || s > 0
       it.holder.visible = visible
       it.panel.visible = s > 0.001
-      if (!visible) continue
+      if (!visible) { it.fresh = true; continue }
 
       // Its slot on the (tilted) ring.
       const a = it.slotAz + turn
@@ -309,20 +366,30 @@ export const createTechOrbit = (cfg) => {
       const bob = Math.sin((timeMs / 1000) * TAU * cfg.bobHz + it.slotAz * 3) * cfg.bobMm * u * Math.max(p, s)
       // Carousel depth: a little bigger passing the front, smaller round the back.
       const near = (Math.cos(wrapPi(a - camAz)) + 1) / 2
-      const depthK = lerp(1, lerp(cfg.backScale, cfg.frontScale, near), p)
+      const depthK = lerp(1, lerp(cfg.backScale, cfg.frontScale, near), glide) * lerp(1, cfg.othersScale, easeInOut(it.h))
 
       // Badge -> slot, round the bottle the short way.
       const azPrint = it.az0 + azOff
-      const az = azPrint + wrapPi(a - azPrint) * p
-      const r = lerp(R * 1.004, Math.hypot(slot.x, slot.z), p)
-      it.holder.position.set(r * Math.sin(az), lerp(it.y0, slot.y, p), r * Math.cos(az))
+      const az = azPrint + wrapPi(a - azPrint) * glide
+      const r = lerp(R * 1.004, Math.hypot(slot.x, slot.z), out)
+      target.set(r * Math.sin(az), lerp(it.y0, slot.y, glide), r * Math.cos(az))
       // Slot -> above the cap: an arc up and in.
       if (s > 0) {
-        it.holder.position.x *= 1 - s
-        it.holder.position.z *= 1 - s
-        it.holder.position.y = lerp(it.holder.position.y, hoverY, s) + Math.sin(s * Math.PI) * 0.15 * H
+        target.x *= 1 - s
+        target.z *= 1 - s
+        target.y = lerp(target.y, hoverY, s) + Math.sin(s * Math.PI) * 0.15 * H
       }
-      it.holder.position.y += bob
+      target.y += bob
+      // Damped spring toward the target (semi-implicit Euler, <= 16 ms steps: stable).
+      const pos = it.holder.position
+      if (it.fresh) { pos.copy(target); it.vel.set(0, 0, 0); it.fresh = false }
+      const w = cfg.springHz * TAU
+      for (let left = dt / 1000; left > 1e-6; left -= 0.016) {
+        const h = Math.min(left, 0.016)
+        acc.subVectors(target, pos).multiplyScalar(w * w).addScaledVector(it.vel, -2 * cfg.springDamping * w)
+        it.vel.addScaledVector(acc, h)
+        pos.addScaledVector(it.vel, h)
+      }
 
       // Facing: outward on the label, then the viewer.
       const toCam = Math.atan2(cam.x - it.holder.position.x, cam.z - it.holder.position.z)
@@ -344,9 +411,14 @@ export const createTechOrbit = (cfg) => {
         const grow = backOut(clamp01(Math.max(p, s) / 0.6)) * scale * cfg.modelScale
         it.grow.scale.setScalar(grow + 1e-4)
         it.model.position.y = s * it.modelHalf * grow // hovering: its base on the hover point
-        // Spins all the time; half a turn unwinds during the flight out of the print.
-        it.yaw = wrapPi(it.yaw + ((cfg.modelSpin * TAU) / 1000) * dt)
-        it.model.rotation.y = it.yaw + (1 - Math.max(p, s)) * Math.PI
+        // Born spinning fast, slowing to its orbit spin as it settles.
+        it.yaw = wrapPi(it.yaw + ((cfg.modelSpin * TAU) / 1000) * dt * (1 + 3 * (1 - p) ** 2))
+        it.model.rotation.y = it.yaw
+        // Materializes bottom -> top during the flight (hologram -> solid); exit reverses it.
+        it.holo.uReveal.value = Math.max(clamp01((p - 0.25) / 0.7), s)
+        it.holo.uRim.value = cfg.rimGlow
+        it.holo.uLines.value = cfg.holoLines
+        liveColor(it.holo.uGlow.value, cfg.glowColor)
       }
 
       // Panel: unfolds from its centre line once the model is on its way up.
@@ -367,5 +439,25 @@ export const createTechOrbit = (cfg) => {
       ? [...built.items.filter(it => it.pe > 0.5 || it.s > 0.5).map(it => it.hit), ...built.items.filter(it => it.s > 0.5).map(it => it.panel)]
       : []),
     setUserSpeed: v => { speed = v },
+    // Horizontal swipe on the camera view (bottleScene): `dx` = finger move, x screen width.
+    // Finger right = the front items move right.
+    drag: (dx) => {
+      const now = performance.now()
+      const da = dx * cfg.dragTurns * TAU
+      turn += da
+      if (dragging) dragVel = lerp(dragVel, da / Math.max(now - dragAt, 1), 0.5)
+      else dragVel = 0
+      dragging = true
+      dragAt = now
+    },
+    release: () => {
+      if (!dragging) return
+      dragging = false
+      // Held still before lifting = no flick.
+      const v = performance.now() - dragAt > 120 ? 0 : dragVel
+      const max = (cfg.flickMaxTurns * TAU) / 1000
+      spin = Math.min(Math.max(v, -max), max)
+      if (Math.abs(v) > (cfg.speed * TAU) / 1000) dir = Math.sign(v)
+    },
   }
 }

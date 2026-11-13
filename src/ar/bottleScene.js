@@ -15,6 +15,8 @@ import {ANIMATION_FACTORIES} from './animations'
 import {createOcclusionProxy} from './occlusionProxy'
 import {ANIMATIONS, OCCLUSION, TRACKING, enabledAnimationIds, animationConfig} from '../config'
 
+const TAP_SLOP_PX = 12 // finger travel still counted as a tap (same as fullscreen.js)
+
 export const createBottleScene = ({onSelect} = {}) => {
   // Driven by the tracker. Hidden until the bottle is found.
   const anchor = new THREE.Group()
@@ -105,8 +107,28 @@ export const createBottleScene = ({onSelect} = {}) => {
     // strength ambient on top flattened them, so this is just a fill.
     scene.add(new THREE.AmbientLight(0xffffff, 0.35))
     scene.add(anchor)
-    // pointerup (not pointerdown) so a drag gesture does not select.
-    canvas.addEventListener('pointerup', e => handleTap(e.clientX, e.clientY))
+    // A press that moves past TAP_SLOP_PX is a swipe: its horizontal travel goes to the
+    // active effects' optional drag(dx, x screen width) and release(); it never selects.
+    // Only a press that stayed put is a tap (on pointerup, as before).
+    let down = null // {id, x, y, lastX, swiping}
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.isPrimary) down = {id: e.pointerId, x: e.clientX, y: e.clientY, lastX: e.clientX, swiping: false}
+    })
+    canvas.addEventListener('pointermove', (e) => {
+      if (!down || e.pointerId !== down.id) return
+      if (!down.swiping && Math.hypot(e.clientX - down.x, e.clientY - down.y) <= TAP_SLOP_PX) return
+      down.swiping = true
+      forEachActive('drag', (e.clientX - down.lastX) / canvas.getBoundingClientRect().width)
+      down.lastX = e.clientX
+    })
+    const end = (e, tap) => {
+      if (!down || e.pointerId !== down.id) return
+      if (down.swiping) forEachActive('release')
+      else if (tap) handleTap(e.clientX, e.clientY)
+      down = null
+    }
+    canvas.addEventListener('pointerup', e => end(e, true))
+    canvas.addEventListener('pointercancel', e => end(e, false))
   }
 
   /**
