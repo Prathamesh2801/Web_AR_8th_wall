@@ -50,16 +50,20 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - AI Photobooth; puts real work in every social video.
 - Needs: 6–10 event photos (rights cleared for socials), ideally 4:5 or square.
 
-### 5. Arcade (no Meshy): BUILT 2026-11-16 as "Badge Bash"
-- `src/ar/arcade.js`: the label is the game board. 3·2·1·GO on a board over the cap, then a
-  30 s round: the 8 printed badges pop out of their prints as coins (whack-a-mole), tap =
-  spark + it flies into the score, synth pop pitched up by the combo (x2..x5, a miss resets).
-  Badges are at the sticker's sides/back, the Z logo at the front: most pops face the camera,
-  ~25% round the side, and a gold Z coin (50 pts) pops off the logo every 8 s; a lime/gold
-  arrow at the bottle's edge points to a target out of view. So you turn the real bottle.
+### 5. Arcade (no Meshy): BUILT 2026-11-16 as "Badge Bash", reworked same day
+- `src/ar/arcade.js`. v1 put the game ON the label (badges popped out of their prints) and
+  made you turn the bottle to reach the back ones: on the device that lost tracking (crop
+  hand-over) and players didn't get it. v2 (now): the 8 badges peel off their prints and
+  fly to a BOARD beside the bottle: 2 columns x 4 sockets, laid out in the viewer's frame
+  (like Photo Burst's fan) so the board always faces the phone; nobody moves the bottle.
+- READY? -> 3·2·1·GO on a board over the cap, then a 30 s round: a badge pops out of its
+  socket toward you (bigger, brighter, glowing); tap = spark + it flies into the score,
+  synth pop pitched up by the combo (x2..x5, a miss resets), then it grows back. A gold Z
+  coin (50 pts) rises out of the cap every 8 s and hovers in front of it.
   End: lime charge fills the bottle, flash, fanfare, LEVEL UP + score + best (this phone);
-  tap the board = again. Sounds synthesised (sound.js tone), no files.
-  Tune on device: `popMm`, `upMs*`, `spawnMs*`, `sideChance`, `hitScale`, SOUND.arcade.
+  tap the board = again. Exit: badges fly home onto their prints. Sounds synthesised.
+  Tune on device: `columnX`, `rowTop/rowBottom`, `seatScale`, `popScale`, `hitScale`,
+  `upMs*`, `spawnMs*`, SOUND.arcade.
 - (original note) Mini game: glowing targets/coins float round the bottle; tap to collect, score counts up,
   the bottle "levels up" with a burst at the end.
 - Interactive / Sensor Games. People at a booth will actually play it.

@@ -1,25 +1,29 @@
 /**
- * arcade.js — Elements style "Arcade" (Badge Bash): the label is the game board.
+ * arcade.js — Elements style "Arcade" (Badge Bash): the label's badges become a game board.
  *
- *   Count   a board appears over the cap: 3 · 2 · 1 · GO (a beep each)
- *   Round   the printed badges (cfg.targets) pop out as coins, whack-a-mole style: each comes
- *           off its print, glows, wobbles, sinks back if not tapped. Tap = a spark, it flies
- *           into the board, a synth pop pitched up by the combo (hits < comboMs apart raise
- *           the multiplier; a miss resets it). Pops get faster through the round.
- *           Most pops are on badges facing the camera, some round the side (sideChance), and
- *           every bonusEveryMs a gold coin pops off the logo (cfg.bonus): on this sticker the
- *           badges sit at the sides/back and the logo at the front, so playing means turning
- *           the real bottle. A lime arrow at the bottle's edge points to a target out of view
+ *   Entry   the printed badges (cfg.targets) peel off their prints one by one and fly round
+ *           the bottle to sockets BESIDE it: two columns (left / right), each a dim ring,
+ *           laid out in the viewer's frame (like Photo Burst's fan), so the board always
+ *           faces the phone and the bottle never has to move. Badges on the left of the
+ *           bottle take the left column (layoutSockets): none crosses the bottle. The board
+ *           over the cap says READY?, then 3 · 2 · 1 · GO (a beep each)
+ *   Round   a badge pops out of its socket toward you (brighter, bigger, glowing, wobbling)
+ *           and sinks back if not tapped. Tap = a spark, it flies into the score, a synth pop
+ *           pitched up by the combo (hits < comboMs apart raise the multiplier; a miss resets
+ *           it), then it grows back in its socket. Pops get faster through the round. Every
+ *           bonusEveryMs a gold coin (cfg.bonus.mark) rises out of the cap and hovers in front
+ *           of it for a moment
  *   End     the bottle "levels up": lime charge fills it bottom -> top (PRODUCT.profile
  *           lathed), a flash at the cap, a fanfare; the board shows LEVEL UP, the score and
- *           the best on this phone (localStorage). Tap the board = play again
- *   Exit    coins sink home, the board and charge fade
+ *           the best on this phone (localStorage). Tap the board = play again (badges stay)
+ *   Exit    coins sink, the badges fly home onto their prints, the board and charge fade
  *
- * Losing the bottle pauses the round (no updates); coming back resumes it: turning the
- * bottle is the game, a dropout must not cost the round. Coins reuse Tech Orbit's badge face
- * (unlit art, brightness follows the room). The board is a canvas redrawn only when its
- * numbers change; the timer bar is a mesh (scaled, never redrawn). update() allocates
- * nothing outside those redraws.
+ * Why a board and not the prints: on the device, turning the bottle to reach badges round
+ * the back lost tracking (crop hand-over) and players didn't know they should. Losing the
+ * bottle pauses the round (no updates); coming back resumes it. Coins reuse Tech Orbit's
+ * badge face (unlit art, brightness follows the room). The board is a canvas redrawn only
+ * when its numbers change; the timer bar is a mesh (scaled, never redrawn). update()
+ * allocates nothing outside those redraws and the once-per-game socket layout.
  */
 import * as THREE from 'three'
 
@@ -30,19 +34,21 @@ import {liveColor} from './liveColor'
 import {RenderOrder} from './renderOrder'
 import {BADGE, makeFace} from './techOrbit'
 import {makeGlow} from './typography'
-import {FACING, IDLE, UP, nextCombo, pickHole} from './arcadeRules'
+import {IDLE, UP, layoutSockets, nextCombo, pickHole} from './arcadeRules'
 
 const TAU = Math.PI * 2
 const clamp01 = t => Math.min(Math.max(t, 0), 1)
 const lerp = (a, b, t) => a + (b - a) * t
 const easeInOut = t => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2)
+const easeOut = t => 1 - (1 - t) ** 3
 const backOut = t => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2
 const wrapPi = (a) => { a %= TAU; return a > Math.PI ? a - TAU : a < -Math.PI ? a + TAU : a }
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
 // Coin states (IDLE / UP from arcadeRules.js).
 const SINK = 2
-const FLY = 3
+const FLY = 3 // hit: to the score
+const REGROW = 4 // back in its socket after a hit
 // Game phases.
 const OFF = 0
 const COUNT = 1
@@ -85,24 +91,6 @@ const chargeMaterial = () => new THREE.ShaderMaterial({
   blending: THREE.AdditiveBlending,
 })
 
-/** The hint arrow's art: a lime chevron pointing right (flipped by rotation for left). */
-const makeChevron = () => {
-  const c = document.createElement('canvas')
-  c.width = c.height = 128
-  const ctx = c.getContext('2d')
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 18
-  ctx.lineCap = ctx.lineJoin = 'round'
-  for (const x of [34, 70]) {
-    ctx.beginPath()
-    ctx.moveTo(x, 30)
-    ctx.lineTo(x + 30, 64)
-    ctx.lineTo(x, 98)
-    ctx.stroke()
-  }
-  return new THREE.CanvasTexture(c)
-}
-
 export const createArcade = (cfg) => {
   const root = new THREE.Group()
   root.name = 'arcade'
@@ -111,6 +99,8 @@ export const createArcade = (cfg) => {
   let speed = 1
   let leaving = false
   let fade = 0 // board + charge, 0..1
+  let te = 0 // entry clock, ms: badges print -> socket; runs back on exit
+  let needLayout = true // pick sockets for this view before the badges fly
   let phase = OFF
   let g = 0 // ms into the current phase
   let beat = -1 // countdown number last beeped
@@ -128,6 +118,8 @@ export const createArcade = (cfg) => {
   try { best = Number(localStorage.getItem(BEST_KEY)) || 0 } catch { /* private mode: no best */ }
 
   const cam = new THREE.Vector3()
+  const seat = new THREE.Vector3()
+  const capPt = new THREE.Vector3()
   const faceColor = new THREE.Color()
 
   const start = () => {
@@ -171,6 +163,7 @@ export const createArcade = (cfg) => {
     const faceGeo = new THREE.CircleGeometry(radius, 48)
     const hitGeo = new THREE.SphereGeometry(radius, 10, 8)
     const hitMat = new THREE.MeshBasicMaterial({visible: false})
+    const ringGeo = new THREE.RingGeometry(radius * 1.12, radius * 1.3, 48)
     const rimMat = new THREE.MeshBasicMaterial({color: cfg.sideColor})
     const goldRimMat = new THREE.MeshBasicMaterial({color: cfg.goldColor})
     const glowTex = makeGlow()
@@ -197,12 +190,25 @@ export const createArcade = (cfg) => {
       glow.renderOrder = RenderOrder.ARCADE_SPARK
       glow.visible = false
       root.add(glow)
+      // The socket: a dim ring the badge sits in (not for the bonus: it has no seat).
+      let ring = null
+      if (!bonus) {
+        ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
+          color: cfg.color, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide,
+        }))
+        ring.renderOrder = RenderOrder.ARCADE_RING
+        ring.visible = false
+        root.add(ring)
+      }
       const h = {
-        holder, coin, front, back, rim, faceMat, hit: hitMesh, glow, bonus,
-        az: (spot.cx / mm.labelWidth - 0.5) * span,
-        y0: (0.5 - spot.cy / mm.labelHeight) * H,
+        holder, coin, front, back, rim, faceMat, hit: hitMesh, glow, ring, bonus,
+        az: spot ? (spot.cx / mm.labelWidth - 0.5) * span : 0, // its print
+        y0: spot ? (0.5 - spot.cy / mm.labelHeight) * H : 0,
+        col: 0, row: 0, // its socket (layoutSockets)
+        p: 0, // 0 on its print .. 1 in its socket
         state: IDLE,
-        k: 0, // 0 on its print .. 1 popped out
+        k: 0, // 0 seated .. 1 popped out
+        re: 1, // regrow in the socket after a hit, 0 -> 1
         age: 0, // ms in its state
         upMs: 0,
         f: 0, // flight to the board, 0..1
@@ -216,9 +222,8 @@ export const createArcade = (cfg) => {
     }
 
     const holes = cfg.targets.map(t => makeHole(brandFile(`icons/${t.icon}.svg`), colors, t.badge, false))
-    const b = cfg.bonus
-    const bonus = b?.mark
-      ? makeHole(brandFile(b.mark), {paper: '#FFF4CC', rim: '#D99A1E', disc: cfg.goldColor, ink: cfg.discColor}, b, true)
+    const bonus = cfg.bonus?.mark
+      ? makeHole(brandFile(cfg.bonus.mark), {paper: '#FFF4CC', rim: '#D99A1E', disc: cfg.goldColor, ink: cfg.discColor}, null, true)
       : null
     const all = bonus ? [...holes, bonus] : holes
 
@@ -266,15 +271,16 @@ export const createArcade = (cfg) => {
     flash.position.y = yTop
     root.add(flash)
 
-    const hint = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeChevron(), transparent: true, opacity: 0, depthWrite: false,
-    }))
-    hint.renderOrder = RenderOrder.ARCADE_HINT
-    hint.visible = false
-    root.add(hint)
-
-    built = {R, H, u, yTop, radius, holes, all, bonus, board, boardMesh, boardMat, boardTex, canvas, bar, barMat, charge, flash, hint, rimMat, goldRimMat}
+    built = {R, H, u, yTop, radius, rows: 1, holes, all, bonus, board, boardMesh, boardMat, boardTex, canvas, bar, barMat, charge, flash, rimMat, goldRimMat}
     return true
+  }
+
+  /** Sockets for this view: badges left of the bottle take the left column. Once per game. */
+  const layout = (camAz, azOff) => {
+    const {holes} = built
+    const s = layoutSockets(holes.map(h => Math.sin(h.az + azOff - camAz)), holes.map(h => h.y0))
+    holes.forEach((h, i) => { h.col = s[i].col; h.row = s[i].row })
+    built.rows = Math.max(...s.map(x => x.row)) + 1
   }
 
   /** Board art for the current numbers. Only called when one of them changed. */
@@ -303,7 +309,8 @@ export const createArcade = (cfg) => {
       ctx.fillText(text, W / 2, y)
     }
     if (phase === COUNT) {
-      big(String(n), '#ffffff', Hc * 0.5, Hc * 0.62)
+      if (n) big(String(n), '#ffffff', Hc * 0.5, Hc * 0.62)
+      else big('READY?', cfg.color, Hc * 0.5, Hc * 0.3)
     } else if (phase === PLAY) {
       if (g < 600) big('GO!', cfg.color, Hc * 0.46, Hc * 0.5)
       else big(String(score), '#ffffff', Hc * 0.44, Hc * 0.46)
@@ -332,21 +339,33 @@ export const createArcade = (cfg) => {
     if (!built) return
     const dt = lastMs === null ? 0 : Math.min(timeMs - lastMs, 100) * speed
     lastMs = timeMs
-    const {R, H, u, yTop, holes, all, bonus, board, boardMat, bar, barMat, charge, flash, hint} = built
+    const {R, H, u, yTop, holes, all, bonus, board, boardMat, bar, barMat, charge, flash} = built
 
     let camAz = 0
     if (camera) {
       root.worldToLocal(cam.copy(camera.position))
       camAz = Math.atan2(cam.x, cam.z)
     }
+    const sinA = Math.sin(camAz)
+    const cosA = Math.cos(camAz)
     const azOff = (cfg.printAzimuthDeg * Math.PI) / 180
+    if (needLayout && te <= 0 && camera) { layout(camAz, azOff); needLayout = false }
+
+    // Entry clock: forward while on; on exit it runs back once every coin is seated.
+    const teEnd = (holes.length - 1) * cfg.entryStaggerMs + cfg.entryFlyMs
+    let busy = false
+    for (const h of all) if (h.state !== IDLE) busy = true
+    te = leaving ? (busy ? te : Math.max(te - dt * cfg.exitSpeed, 0)) : Math.min(te + dt, teEnd)
+    if (leaving && te <= 0) needLayout = true // next time: sockets for that view
+    const seated = te >= teEnd
+
     fade = clamp01(fade + ((leaving ? -1 : 1) * dt) / 400)
-    if (!leaving) g += dt
+    if (!leaving && (phase !== COUNT || seated)) g += dt
     bump = Math.max(bump - dt / 250, 0)
 
     // --- Game clock -------------------------------------------------------------------
     let n = 0
-    if (phase === COUNT) {
+    if (phase === COUNT && seated) {
       const step = cfg.countdownMs / 3
       n = 3 - Math.min(Math.floor(g / step), 2)
       if (n !== beat) { beat = n; bump = 1; tone(660, 120, {type: 'square', level: 0.5}) }
@@ -363,7 +382,7 @@ export const createArcade = (cfg) => {
     } else if (phase === PLAY) {
       const prog = clamp01(g / cfg.roundMs)
       if (g >= nextSpawn) {
-        const i = pickHole(holes, camAz - azOff, Math.random(), Math.random(), cfg.sideChance)
+        const i = pickHole(holes, Math.random())
         if (i >= 0) {
           const h = holes[i]
           h.state = UP
@@ -407,9 +426,13 @@ export const createArcade = (cfg) => {
     faceColor.setScalar(Math.min(1, Math.max(0.45, Math.sqrt(L / 0.18) * cfg.brightness)))
     liveColor(built.rimMat.color, cfg.sideColor)
     liveColor(built.goldRimMat.color, cfg.goldColor)
-    let hintHole = null
-    let anyFacing = false
-    for (const h of all) {
+    const rows = built.rows
+    const yLo = cfg.rowBottom * H
+    const yHi = cfg.rowTop * H
+    const colX = cfg.columnX * R
+    const fwd = cfg.forward * R
+    for (let i = 0; i < all.length; i++) {
+      const h = all[i]
       h.age += dt
       if (h.state === UP) {
         h.k = Math.min(h.k + dt / cfg.popMs, 1)
@@ -422,19 +445,68 @@ export const createArcade = (cfg) => {
         if (h.k <= 0) h.state = IDLE
       } else if (h.state === FLY) {
         h.f = Math.min(h.f + dt / cfg.flyMs, 1)
-        if (h.f >= 1) { h.state = IDLE; h.k = 0; bump = 1 }
+        if (h.f >= 1) {
+          bump = 1
+          h.k = 0
+          if (h.bonus) h.state = IDLE
+          else { h.state = REGROW; h.re = 0 }
+        }
+      } else if (h.state === REGROW) {
+        h.re = Math.min(h.re + dt / cfg.regrowMs, 1)
+        if (h.re >= 1) h.state = IDLE
       }
       h.burst = Math.max(h.burst - dt / 260, 0)
 
-      const az = h.az + azOff
-      const facing = Math.cos(az - camAz) > FACING
-      if (h.state === UP) {
-        if (facing) anyFacing = true
-        else if (!hintHole || h.bonus) hintHole = h
+      const pos = h.holder.position
+      const out = h.state === UP ? backOut(h.k) : easeInOut(h.k)
+      const wob = Math.sin((timeMs / 1000) * TAU * 1.6 + h.seed) * out
+      let scale = 1
+      let dim = 1
+      if (h.bonus) {
+        // Out of the cap, hovering in front of it (toward the viewer).
+        h.holder.visible = h.state !== IDLE
+        if (h.state === UP || h.state === SINK) {
+          capPt.set(sinA * cfg.bonusFront * R, yTop + cfg.bonusY * H, cosA * cfg.bonusFront * R)
+          pos.set(0, yTop, 0).lerp(capPt, easeOut(h.k))
+          pos.y += Math.sin(h.k * Math.PI) * 0.12 * H + wob * 0.6 * u
+          scale = backOut(h.k) * cfg.bonusScale
+        }
+      } else {
+        // Its socket, in the viewer's frame (x right, z toward the viewer), turned by camAz.
+        const sx = h.col * colX
+        const sy = rows > 1 ? lerp(yHi, yLo, h.row / (rows - 1)) : (yHi + yLo) / 2
+        seat.set(sx * cosA + fwd * sinA, sy, -sx * sinA + fwd * cosA)
+        h.p = clamp01((te - i * cfg.entryStaggerMs) / cfg.entryFlyMs)
+        h.holder.visible = h.p > 0
+        if (h.state !== FLY && h.p > 0) {
+          if (h.p < 1) {
+            // Print -> socket, round the bottle on the badge's own side.
+            const az = h.az + azOff
+            const sAz = Math.atan2(seat.x, seat.z)
+            const a = az + wrapPi(sAz - az) * easeInOut(h.p)
+            const r = lerp(R * 1.004, Math.hypot(seat.x, seat.z), easeOut(h.p))
+            pos.set(r * Math.sin(a), lerp(h.y0, seat.y, easeInOut(h.p)), r * Math.cos(a))
+          } else {
+            pos.copy(seat)
+            pos.x += sinA * cfg.popMm * u * out
+            pos.z += cosA * cfg.popMm * u * out
+            pos.y += wob * 0.6 * u
+          }
+          scale = lerp(1, cfg.seatScale, easeInOut(h.p)) * lerp(1, cfg.popScale / cfg.seatScale, out) * backOut(h.re)
+          // Waiting badges are dimmer, so a popped one reads at a glance.
+          dim = phase === PLAY || phase === COUNT ? lerp(1, lerp(cfg.seatDim, 1, h.k), h.p) : 1
+        }
+        const ringK = h.p >= 1 ? fade * (h.state === UP ? lerp(0.35, 0.9, h.k) : 0.35) : 0
+        h.ring.visible = ringK > 0.01
+        if (h.ring.visible) {
+          h.ring.position.copy(seat)
+          h.ring.rotation.y = camAz
+          h.ring.scale.setScalar(cfg.seatScale)
+          h.ring.material.opacity = ringK
+          liveColor(h.ring.material.color, cfg.color)
+        }
       }
 
-      h.holder.visible = h.state !== IDLE
-      const pos = h.holder.position
       if (h.state === FLY) {
         // To the board, in an arc, shrinking and spinning.
         const f = easeInOut(h.f)
@@ -443,51 +515,30 @@ export const createArcade = (cfg) => {
         h.holder.scale.setScalar(Math.max(lerp(h.flyScale, h.flyScale * 0.35, f), 1e-4))
         h.holder.rotation.y += dt * 0.025
         h.holder.rotation.z = 0
-      } else if (h.state !== IDLE) {
-        const out = h.state === UP ? backOut(h.k) : easeInOut(h.k)
-        const r = R * 1.004 + out * cfg.popMm * u
-        const wob = Math.sin((timeMs / 1000) * TAU * 1.6 + h.seed)
-        pos.set(r * Math.sin(az), h.y0 + wob * 0.6 * u * out, r * Math.cos(az))
+      } else if (h.holder.visible) {
+        // Facing: outward while on the print, then the viewer.
         const toCam = Math.atan2(cam.x - pos.x, cam.z - pos.z)
-        h.holder.rotation.y = az + wrapPi(toCam - az) * 0.5 * out
-        h.holder.rotation.z = wob * 0.18 * out
-        // A badge comes off its print at print size; the bonus grows out of the logo.
-        const s = h.bonus ? backOut(h.k) * cfg.bonusScale : lerp(1, cfg.popScale, out)
-        h.holder.scale.setScalar(Math.max(s, 1e-4))
-        const depth = lerp(0.02, cfg.depthMm, out) * u
+        const az = h.az + azOff
+        h.holder.rotation.y = h.bonus ? toCam : az + wrapPi(toCam - az) * easeInOut(h.p)
+        h.holder.rotation.z = wob * 0.18
+        h.holder.scale.setScalar(Math.max(scale, 1e-4))
+        const depth = lerp(0.02, cfg.depthMm, h.bonus ? 1 : h.p) * u
         h.rim.scale.set(1, 1, Math.max(depth / h.holder.scale.x, 1e-4))
         h.front.position.z = depth / 2 / h.holder.scale.x
         h.back.position.z = -h.front.position.z
       }
       h.hit.scale.setScalar(cfg.hitScale)
-      h.faceMat.color.copy(faceColor)
+      h.faceMat.color.copy(faceColor).multiplyScalar(dim)
 
       // Glow behind a coin that is up; a burst where it was hit.
-      const up = h.state === UP || h.state === SINK ? (h.state === UP ? h.k : h.k * 0.5) : 0
-      const glowK = Math.max(up * 0.55, h.burst)
+      const glowK = Math.max((h.state === UP ? h.k : h.state === SINK ? h.k * 0.5 : 0) * 0.55, h.burst)
       h.glow.visible = glowK > 0.01
       if (h.glow.visible) {
-        if (h.burst > 0) h.glow.position.copy(h.from)
-        else h.glow.position.copy(pos)
+        h.glow.position.copy(h.burst > 0 ? h.from : pos)
         h.glow.material.opacity = glowK
-        h.glow.scale.setScalar(built.radius * (h.burst > 0 ? lerp(9, 3, h.burst) : 4))
+        h.glow.scale.setScalar(built.radius * cfg.seatScale * (h.burst > 0 ? lerp(8, 3, h.burst) : 3.5))
         liveColor(h.glow.material.color, h.bonus ? cfg.goldColor : cfg.color)
       }
-    }
-
-    // --- Hint: a target is up only out of view (or the bonus is) -> arrow at the edge ---
-    const showHint = phase === PLAY && hintHole && (hintHole.bonus || !anyFacing)
-    hint.visible = !!showHint
-    if (showHint) {
-      const side = wrapPi(hintHole.az + azOff - camAz) > 0 ? 1 : -1
-      const a = camAz + side * Math.PI * 0.5
-      const pulse = (Math.sin((timeMs / 1000) * TAU * 1.5) + 1) / 2
-      const r = R * (1.7 + 0.25 * pulse)
-      hint.position.set(r * Math.sin(a), hintHole.y0, r * Math.cos(a))
-      hint.scale.setScalar(built.radius * 2.6)
-      hint.material.rotation = side > 0 ? 0 : Math.PI // drawn pointing right (+1 = screen right)
-      hint.material.opacity = 0.55 + 0.45 * pulse
-      liveColor(hint.material.color, hintHole.bonus ? cfg.goldColor : cfg.color)
     }
 
     // --- Board ------------------------------------------------------------------------
@@ -525,7 +576,6 @@ export const createArcade = (cfg) => {
       flash.scale.setScalar(lerp(1.3, 0.6, fk) * R * 2.4) // bigger washed the whole frame
       liveColor(flash.material.color, cfg.color)
     }
-    flash.position.y = yTop
   }
 
   return {
@@ -536,15 +586,11 @@ export const createArcade = (cfg) => {
       if (leaving || phase === OFF) { leaving = false; start() }
     },
     exit: () => { leaving = true; phase = OFF },
-    isExited: () => !built || (leaving && fade <= 0 && built.all.every(h => h.state === IDLE)),
+    isExited: () => !built || (leaving && te <= 0 && fade <= 0 && built.all.every(h => h.state === IDLE)),
     getPickables: () => {
       if (!built) return []
       const out = []
-      const camAz = Math.atan2(cam.x, cam.z)
-      for (const h of built.all) {
-        // Behind the bottle = not tappable (the ray would pass through it).
-        if (h.state === UP && h.k > 0.3 && Math.cos(h.az + (cfg.printAzimuthDeg * Math.PI) / 180 - camAz) > -0.3) out.push(h.hit)
-      }
+      for (const h of built.all) if (h.state === UP && h.k > 0.3) out.push(h.hit)
       if (phase === END) out.push(built.boardMesh)
       return out
     },

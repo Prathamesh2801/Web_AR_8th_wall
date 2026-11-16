@@ -461,9 +461,10 @@ export const ANIMATIONS = {
   },
 
   /**
-   * Badge Bash: the label is the game board. Its printed badges pop out as coins; tap them
-   * in a timed round (combo, gold bonus coin from the logo), then the bottle levels up and
-   * the board over the cap shows the score + best. Tap the board = again. See arcade.js.
+   * Badge Bash: the label's printed badges fly to a board of sockets beside the bottle
+   * (always facing the phone) and pop out of them; tap them in a timed round (combo, gold
+   * coin out of the cap), then the bottle levels up and the board over the cap shows the
+   * score + best. Tap the board = again. See arcade.js.
    */
   [AnimationId.ARCADE]: {
     enabled: true,
@@ -473,9 +474,22 @@ export const ANIMATIONS = {
     delay: 0,
 
     // Per brand: targets [{icon (public/brands/<id>/icons/<icon>.svg), badge: {cx, cy} (mm,
-    // trim label)}]; bonus {cx, cy (mm), mark (SVG)} = the gold coin's spot + face, optional.
+    // trim label)}]; bonus {mark (SVG)} = the gold coin's face, optional.
     targets: [],
     bonus: null,
+
+    // Entry: badges fly from their prints to the board's sockets (then 3 · 2 · 1).
+    entryStaggerMs: 110,
+    entryFlyMs: 900,
+    exitSpeed: 1.6, // x faster home
+
+    // Board: two columns of sockets beside the bottle, facing the viewer.
+    columnX: 1.55, // socket centre from the bottle axis, x bottle radius (1.9 sat too far out on device)
+    rowTop: 0.85, // top / bottom socket rows, x label height above the label centre
+    rowBottom: -0.35,
+    forward: 0.3, // toward the viewer, x bottle radius
+    seatScale: 1.4, // a seated badge, x the printed badge
+    seatDim: 0.6, // waiting badges' brightness (a popped one is full)
 
     // Round
     countdownMs: 3000, // 3 · 2 · 1
@@ -484,23 +498,25 @@ export const ANIMATIONS = {
     spawnMsEnd: 450,
     upMsStart: 1400, // a coin stays up: start -> end
     upMsEnd: 800,
-    sideChance: 0.25, // a pop on a badge NOT facing the camera (turn the bottle!)
     bonusEveryMs: 8000,
-    bonusUpMs: 3200, // long: it may need the bottle turned
+    bonusUpMs: 2200,
     points: 10,
     bonusPoints: 50,
     comboMs: 1200, // hits closer than this raise the multiplier
     comboMax: 5,
 
     // Coins
-    popMs: 160, // out of the print
+    popMs: 160, // out of the socket
     sinkMs: 220, // back in, missed
     flyMs: 450, // hit: to the score board
-    popMm: 6, // how far out of the label
-    popScale: 1.25, // x the printed badge
-    bonusScale: 1.5,
+    regrowMs: 350, // back in its socket after a hit
+    popMm: 7, // toward the viewer
+    popScale: 1.8, // popped, x the printed badge
+    bonusScale: 1.8,
+    bonusFront: 1.6, // gold coin hovers this far in front of the cap, x bottle radius
+    bonusY: -0.08, // ... and this high above the cap top, x label height
     depthMm: 1.6,
-    hitScale: 1.8, // tap target, x the coin (generous: small coins on a phone)
+    hitScale: 1.6, // tap target, x the coin (generous: nothing else nearby)
     brightness: 0.95, // coin faces, x the room light
     printAzimuthDeg: 0, // calibration, as techOrbit's
 

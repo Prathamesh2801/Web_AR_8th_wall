@@ -1,7 +1,7 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 
-import {IDLE, nextCombo, pickHole} from './arcadeRules.js'
+import {IDLE, UP, layoutSockets, nextCombo, pickHole} from './arcadeRules.js'
 
 test('combo climbs on quick hits, caps, resets after a pause', () => {
   assert.equal(nextCombo(0, 1e9, 1200, 5), 1)
@@ -10,13 +10,19 @@ test('combo climbs on quick hits, caps, resets after a pause', () => {
   assert.equal(nextCombo(4, 1500, 1200, 5), 1)
 })
 
-test('pops prefer badges facing the camera, side ones by chance, none when all are up', () => {
-  const holes = [{az: 0, state: IDLE}, {az: Math.PI, state: IDLE}, {az: 0.3, state: 1}]
-  assert.equal(pickHole(holes, 0, 0.9, 0.5, 0.25), 0) // facing (the up one is skipped)
-  assert.equal(pickHole(holes, 0, 0.1, 0.5, 0.25), 1) // r1 < side: round the back
-  assert.equal(pickHole(holes, Math.PI, 0.9, 0.5, 0.25), 1) // camera moved round
-  holes[0].state = 1
-  assert.equal(pickHole(holes, 0, 0.9, 0.5, 0.25), 1) // none facing: the side one
-  holes[1].state = 1
-  assert.equal(pickHole(holes, 0, 0.9, 0.5, 0.25), -1)
+test('pops pick only free holes', () => {
+  const holes = [{state: UP}, {state: IDLE}, {state: UP}, {state: IDLE}]
+  assert.equal(pickHole(holes, 0), 1)
+  assert.equal(pickHole(holes, 0.99), 3)
+  holes[1].state = holes[3].state = UP
+  assert.equal(pickHole(holes, 0.5), -1)
+})
+
+test('sockets: screen-left half to the left column, top print row first', () => {
+  // 4 badges: two on the left (one high, one low), two on the right.
+  const s = layoutSockets([-0.9, -0.5, 0.5, 0.9], [0.3, -0.2, 0.3, -0.2])
+  assert.deepEqual(s, [{col: -1, row: 0}, {col: -1, row: 1}, {col: 1, row: 0}, {col: 1, row: 1}])
+  // Uneven (all on one side of the camera): still split in half.
+  const t = layoutSockets([0.1, 0.2, 0.3, 0.4], [0, 0, 0, 0])
+  assert.deepEqual(t.map(x => x.col), [-1, -1, 1, 1])
 })
