@@ -34,6 +34,10 @@ const assetList = () => {
   if (on.has('logoLift')) for (const f of [ANIMATIONS.logoLift.mark, ANIMATIONS.logoLift.patch]) if (f) urls.add(brandFile(f))
   if (on.has('planted')) for (const n of PLANTED_MODELS) urls.add(brandFile(`models/${n}.glb`))
   if (on.has('photoBurst')) for (const ph of ANIMATIONS.photoBurst.photos ?? []) urls.add(brandFile(ph.file))
+  if (on.has('arcade')) {
+    for (const it of ANIMATIONS.arcade.targets ?? []) urls.add(brandFile(`icons/${it.icon}.svg`))
+    if (ANIMATIONS.arcade.bonus?.mark) urls.add(brandFile(ANIMATIONS.arcade.bonus.mark))
+  }
   if (on.has('techOrbit')) {
     for (const it of ANIMATIONS.techOrbit.items ?? []) {
       urls.add(brandFile(`icons/${it.icon}.svg`))

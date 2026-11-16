@@ -106,6 +106,7 @@ export const SOUND = {
   lock: 0.9, // bottle detected
   select: 0.45, // effect picked (plays often: keep it low)
   snap: 0.8, // photo taken
+  arcade: 0.35, // Arcade's synth pops / beeps / fanfare (sound.js tone)
 };
 
 /** Image-target tracking. */
@@ -146,6 +147,7 @@ export const AnimationId = {
   NUTRIENT_ORBIT: "nutrientOrbit",
   TECH_ORBIT: "techOrbit",
   PHOTO_BURST: "photoBurst",
+  ARCADE: "arcade",
   SETTLE: "settle",
   SPOTLIGHT: "spotlight",
   ENERGY: "energy",
@@ -458,6 +460,65 @@ export const ANIMATIONS = {
     paperColor: "#F7F5EE",
   },
 
+  /**
+   * Badge Bash: the label is the game board. Its printed badges pop out as coins; tap them
+   * in a timed round (combo, gold bonus coin from the logo), then the bottle levels up and
+   * the board over the cap shows the score + best. Tap the board = again. See arcade.js.
+   */
+  [AnimationId.ARCADE]: {
+    enabled: true,
+    active: false,
+    group: "elements",
+    label: "Arcade",
+    delay: 0,
+
+    // Per brand: targets [{icon (public/brands/<id>/icons/<icon>.svg), badge: {cx, cy} (mm,
+    // trim label)}]; bonus {cx, cy (mm), mark (SVG)} = the gold coin's spot + face, optional.
+    targets: [],
+    bonus: null,
+
+    // Round
+    countdownMs: 3000, // 3 · 2 · 1
+    roundMs: 30000,
+    spawnMsStart: 1100, // between pops: start of the round -> end
+    spawnMsEnd: 450,
+    upMsStart: 1400, // a coin stays up: start -> end
+    upMsEnd: 800,
+    sideChance: 0.25, // a pop on a badge NOT facing the camera (turn the bottle!)
+    bonusEveryMs: 8000,
+    bonusUpMs: 3200, // long: it may need the bottle turned
+    points: 10,
+    bonusPoints: 50,
+    comboMs: 1200, // hits closer than this raise the multiplier
+    comboMax: 5,
+
+    // Coins
+    popMs: 160, // out of the print
+    sinkMs: 220, // back in, missed
+    flyMs: 450, // hit: to the score board
+    popMm: 6, // how far out of the label
+    popScale: 1.25, // x the printed badge
+    bonusScale: 1.5,
+    depthMm: 1.6,
+    hitScale: 1.8, // tap target, x the coin (generous: small coins on a phone)
+    brightness: 0.95, // coin faces, x the room light
+    printAzimuthDeg: 0, // calibration, as techOrbit's
+
+    // Board over the cap + the level-up
+    boardMm: 20, // board height (width = 2x)
+    boardGapMm: 8, // cap top -> board bottom
+    chargeMs: 1400, // level-up: the bottle fills bottom -> top
+    color: "#9BE23B",
+    goldColor: "#F5C542",
+    paperColor: "#F6F8F3", // coin = the badge, as printed
+    rimColor: "#8CCB3A",
+    discColor: "#1C552A",
+    sideColor: "#9BE23B",
+    cardTop: "rgba(18, 64, 34, 0.92)",
+    cardBottom: "rgba(6, 30, 14, 0.94)",
+    cardEdge: "rgba(155, 226, 59, 0.85)",
+  },
+
   /** Nutrients orbiting the bottle on three tilted rings; tap a node for its card. */
   [AnimationId.NUTRIENT_ORBIT]: {
     enabled: true,
@@ -659,6 +720,7 @@ const needs = {
     (ANIMATIONS[AnimationId.TECH_ORBIT].items?.length ?? 0) > 0,
   [AnimationId.PHOTO_BURST]:
     (ANIMATIONS[AnimationId.PHOTO_BURST].photos?.length ?? 0) > 0,
+  [AnimationId.ARCADE]: (ANIMATIONS[AnimationId.ARCADE].targets?.length ?? 0) > 0,
   [AnimationId.LOGO_LIFT]: !!(
     ANIMATIONS[AnimationId.LOGO_LIFT].mark &&
     ANIMATIONS[AnimationId.LOGO_LIFT].print

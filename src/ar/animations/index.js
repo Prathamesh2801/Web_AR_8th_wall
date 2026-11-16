@@ -12,6 +12,7 @@
  * without reaching back into the config module.
  */
 import {AnimationId} from '../../config'
+import {createArcade} from '../arcade'
 import {createCallouts} from '../callouts'
 import {createEnergy} from '../energy'
 import {createLabelSpin} from '../labelSpin'
@@ -38,6 +39,7 @@ export const ANIMATION_FACTORIES = {
   [AnimationId.NUTRIENT_ORBIT]: createNutrientSystem,
   [AnimationId.TECH_ORBIT]: createTechOrbit,
   [AnimationId.PHOTO_BURST]: createPhotoBurst,
+  [AnimationId.ARCADE]: createArcade,
   [AnimationId.PLANTED]: createPlanted,
   [AnimationId.SETTLE]: createSettleEffect,
   [AnimationId.SPOTLIGHT]: createSpotlight,

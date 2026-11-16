@@ -43,18 +43,22 @@ const backOut = t => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2 // ends with a 
 const lerp = (a, b, t) => a + (b - a) * t
 const wrapPi = (a) => { a %= TAU; return a > Math.PI ? a - TAU : a < -Math.PI ? a + TAU : a }
 // The printed badge (make-sticker.mjs service()): radii in mm, icon box in mm.
-const BADGE = {ring: 5.6, disc: 4.9, icon: 6.1}
+export const BADGE = {ring: 5.6, disc: 4.9, icon: 6.1}
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
-/** Loads a Tabler (stroke) icon as a white image; `onImg` gets it when ready. */
-const loadIcon = (url, onImg) => fetchAsset(url).then(r => r.text()).then((svg) => {
+/**
+ * Loads a Tabler (stroke) icon as a white image; `onImg` gets it when ready. `ink` = a fill
+ * for an SVG without currentColor (a traced logo: its paths would draw black).
+ */
+const loadIcon = (url, onImg, ink) => fetchAsset(url).then(r => r.text()).then((svg) => {
   const img = new Image()
   img.onload = () => onImg(img)
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace(/currentColor/g, '#ffffff'))
+  const art = ink ? svg.replace('<svg ', `<svg fill="${ink}" `) : svg.replace(/currentColor/g, '#ffffff')
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(art)
 }).catch(err => console.warn('[AR] tech orbit icon failed', url, err))
 
 /** The badge face as a texture; the icon is drawn in once its SVG has loaded. */
-const makeFace = (iconUrl, colors) => {
+export const makeFace = (iconUrl, colors) => {
   const S = 512 // also seen big, hovering on the cap: 256 went soft
   const c = document.createElement('canvas')
   c.width = c.height = S
@@ -79,7 +83,7 @@ const makeFace = (iconUrl, colors) => {
     tex.needsUpdate = true
   }
   paint(null)
-  loadIcon(iconUrl, paint)
+  loadIcon(iconUrl, paint, colors.ink)
   return tex
 }
 

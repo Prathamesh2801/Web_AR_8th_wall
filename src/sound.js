@@ -60,5 +60,30 @@ export const playSound = (name, level0 = 1) => { // level0: x the sound's own le
   src.start()
 }
 
+/**
+ * A synth note, no file (Arcade's pops, beeps, fanfare). `at` = start delay (s), `to` = a
+ * pitch slide over the note. Level = SOUND.volume x SOUND.arcade x `level`.
+ */
+export const tone = (freq, ms, {type = 'sine', level = 1, at = 0, to = 0} = {}) => {
+  if (!ctx) return
+  const vol = SOUND.volume * (SOUND.arcade ?? 1) * level
+  if (!(vol > 0)) return
+  if (ctx.state !== 'running') ctx.resume()
+  const t0 = ctx.currentTime + at
+  const t1 = t0 + ms / 1000
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = type
+  osc.frequency.setValueAtTime(freq, t0)
+  if (to) osc.frequency.exponentialRampToValueAtTime(to, t1)
+  // 5 ms attack, exponential tail: a hard start/stop clicks.
+  gain.gain.setValueAtTime(0, t0)
+  gain.gain.linearRampToValueAtTime(vol, t0 + 0.005)
+  gain.gain.exponentialRampToValueAtTime(0.0001, t1)
+  osc.connect(gain).connect(ctx.destination)
+  osc.start(t0)
+  osc.stop(t1 + 0.02)
+}
+
 /** Short tap feel where supported (Android; iOS Safari has no vibrate). */
 export const haptic = (ms = 12) => navigator.vibrate?.(ms)

@@ -155,6 +155,21 @@ export default {
         {file: 'photos/event-08.webp', caption: 'Beachside surf game'},
       ],
     },
+    // Elements "Arcade" (Badge Bash): all 8 printed badges are the holes (centres from
+    // make-sticker.mjs); the gold bonus coin pops off the Z logo (logoLift's print).
+    arcade: {
+      targets: [
+        {icon: 'cardboards', badge: {cx: 14.5, cy: 10.4}},
+        {icon: 'device-gamepad-2', badge: {cx: 38, cy: 10.4}},
+        {icon: 'augmented-reality', badge: {cx: 14.5, cy: 32.2}},
+        {icon: 'hand-click', badge: {cx: 38, cy: 32.2}},
+        {icon: 'camera-ai', badge: {cx: 134, cy: 10.4}},
+        {icon: 'hand-move', badge: {cx: 157.5, cy: 10.4}},
+        {icon: 'radar-2', badge: {cx: 134, cy: 32.2}},
+        {icon: 'robot', badge: {cx: 157.5, cy: 32.2}},
+      ],
+      bonus: {cx: 86, cy: 12.9, mark: 'logo-mark.svg'},
+    },
     // The sticker's 8 service badges, scanned off the bottle.
     scan: {
       readouts: ['Virtual Reality', 'VR Games', 'AR Experiences', 'Interactive Walls',

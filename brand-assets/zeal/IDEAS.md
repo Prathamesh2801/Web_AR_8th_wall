@@ -50,8 +50,17 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - AI Photobooth; puts real work in every social video.
 - Needs: 6–10 event photos (rights cleared for socials), ideally 4:5 or square.
 
-### 5. Arcade (no Meshy)
-- Mini game: glowing targets/coins float round the bottle; tap to collect, score counts up,
+### 5. Arcade (no Meshy): BUILT 2026-11-16 as "Badge Bash"
+- `src/ar/arcade.js`: the label is the game board. 3·2·1·GO on a board over the cap, then a
+  30 s round: the 8 printed badges pop out of their prints as coins (whack-a-mole), tap =
+  spark + it flies into the score, synth pop pitched up by the combo (x2..x5, a miss resets).
+  Badges are at the sticker's sides/back, the Z logo at the front: most pops face the camera,
+  ~25% round the side, and a gold Z coin (50 pts) pops off the logo every 8 s; a lime/gold
+  arrow at the bottle's edge points to a target out of view. So you turn the real bottle.
+  End: lime charge fills the bottle, flash, fanfare, LEVEL UP + score + best (this phone);
+  tap the board = again. Sounds synthesised (sound.js tone), no files.
+  Tune on device: `popMm`, `upMs*`, `spawnMs*`, `sideChance`, `hitScale`, SOUND.arcade.
+- (original note) Mini game: glowing targets/coins float round the bottle; tap to collect, score counts up,
   the bottle "levels up" with a burst at the end.
 - Interactive / Sensor Games. People at a booth will actually play it.
 - Needs: nothing external (procedural); maybe a coin/target sound.
@@ -110,7 +119,8 @@ three: **Tech Orbit + Robot Buddy + Photo Burst** (a service, a character, real 
 - Typography: Lift & Spin (ZEAL), **Logo** (Z mark lifts off, turntable over the cap, tap =
   home), Spin (whole label), Callouts, Ticker.
 - Effects: Glow, Spotlight, Energy, Scan (8 services), Sparkle.
-- Elements: Tech Orbit (badge coins; Meshy models can replace them per item).
+- Elements: Tech Orbit (badge coins; Meshy models can replace them per item), Photo Burst,
+  Arcade (Badge Bash).
 - Start screen: 3D bottle built from the sticker art.
 - Polish (2026-11-13, from device shots #3/#4): models sized by their MIDDLE dimension (by the
   largest, the wide headset looked big, the tall wall small; per-item `size` tweaks by eye);

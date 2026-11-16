@@ -88,6 +88,12 @@ export const RenderOrder = {
   PHOTO_SHADOW: 23,
   PHOTO_FLASH: 44,
 
+  /** Arcade: the level-up charge in the bottle, hit sparks, the score board, the hint arrow. */
+  ARCADE_CHARGE: 24,
+  ARCADE_SPARK: 42,
+  ARCADE_BOARD: 52,
+  ARCADE_HINT: 53,
+
   /** Callout cards (typed feature text). */
   CALLOUT_CARD: 51,
 }

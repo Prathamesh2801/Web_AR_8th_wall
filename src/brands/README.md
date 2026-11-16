@@ -63,6 +63,7 @@ of the lens menu until then):
 | Ticker | `tickerRings.rings` = `{key: {text, y, radius, tiltDeg, speed, direction}}` |
 | Orbit | `nutrients` |
 | Tech Orbit (Elements) | `techOrbit.items` = `[{key, label, icon, badge: {cx, cy} (mm), pitch, model?}]` + `public/brands/<id>/icons/<icon>.svg`: see zeal |
+| Arcade (Elements) | `arcade.targets` = `[{icon, badge: {cx, cy} (mm)}]` (the holes; icons as Tech Orbit's) + optional `arcade.bonus` = `{cx, cy, mark}` (gold coin's spot + SVG face): see zeal; off while empty |
 | Photo Burst (Elements) | `photoBurst.photos` = `[{file, caption?}]`, files in `public/brands/<id>/photos/` from `scripts/prepare-photos.mjs` (whole photo, any shape, longest side 1000 px WebP; each print takes its photo's shape); off while empty |
 | Scan | `scan.readouts` = `['line', ...]` (+ `scan.verdict`), or `nutrients` |
 | Planted | `nutrients` + `planted: {enabled: true}` + `public/brands/<id>/models/{soil,ginseng-root,grape}.glb` |

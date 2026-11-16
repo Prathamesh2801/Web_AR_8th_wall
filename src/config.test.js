@@ -20,7 +20,7 @@ test('effects needing content the brand lacks are switched off', async () => {
   const c = await load('?brand=zeal') // has words, callouts, ticker, scan readouts; no nutrients
   assert.equal(c.BRAND.id, 'zeal')
   assert.deepEqual(c.enabledAnimationIds(),
-    ['productOutline', 'typography', 'logoLift', 'labelSpin', 'callouts', 'tickerRings', 'techOrbit', 'photoBurst', 'settle', 'spotlight', 'energy', 'scan', 'sparkle'])
+    ['productOutline', 'typography', 'logoLift', 'labelSpin', 'callouts', 'tickerRings', 'techOrbit', 'photoBurst', 'arcade', 'settle', 'spotlight', 'energy', 'scan', 'sparkle'])
   assert.equal(c.ANIMATIONS.sparkle.color1, '#9BE23B') // brand override merged
 })
 
