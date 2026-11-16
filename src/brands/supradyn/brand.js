@@ -70,6 +70,9 @@ export default {
     photoName: 'supradyn-ar.jpg', // file name of saved photos
   },
 
+  /** Home-screen app (npm run generate-pwa -- supradyn): a photo icon is cover-cropped. */
+  app: {icon: 'hero.jpg'},
+
   /** Nutrient data (Orbit, Scan, Planted captions, nutrient card). null = none. */
   nutrients,
 

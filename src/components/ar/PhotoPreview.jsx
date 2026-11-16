@@ -1,11 +1,13 @@
 import {useState} from 'react'
 
 import {EXPERIENCE} from '../../config'
+import {isIOS} from '../../pwa'
 
 /*
  * The captured photo, full screen, with Save / Share / retake.
- * Save is a download (Android: Downloads/Gallery; iOS: Files). Share opens the native
- * share sheet with the image, which on iOS is also where "Save Image" to Photos lives.
+ * Save is a download (Android: Downloads/Gallery). Share opens the native share sheet.
+ * iOS gets ONE button, the share sheet: "Save Image" to Photos only lives there, and a
+ * download link in the home-screen app (no back button) could strand the user on the image.
  */
 const FILE_NAME = EXPERIENCE.photoName
 
@@ -44,21 +46,21 @@ export const PhotoPreview = ({photo, onClose}) => {
         style={{paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)'}}
       >
         {note && <div role="status" className="rounded-full bg-black/60 px-4 py-2 text-xs font-semibold text-white">{note}</div>}
-        <div className="grid w-full max-w-sm grid-cols-2 gap-3">
-          <a
+        <div className={`grid w-full max-w-sm gap-3 ${isIOS ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {!isIOS && <a
             href={photo}
             download={FILE_NAME}
             onClick={() => flash('✓ Saved')}
             className="flex h-13 items-center justify-center rounded-full border border-white/30 bg-white/15 text-[15px] font-bold text-white active:scale-95"
           >
             ↓ Save
-          </a>
+          </a>}
           <button
             type="button"
             onClick={share}
             className="h-13 rounded-full bg-gold text-[15px] font-bold text-black active:scale-95"
           >
-            Share ↗
+            {isIOS ? 'Save or share ↗' : 'Share ↗'}
           </button>
         </div>
       </div>

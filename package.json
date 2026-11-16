@@ -10,6 +10,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "generate-targets": "node scripts/generate-targets.mjs",
+    "generate-pwa": "node scripts/generate-pwa.mjs",
     "test": "node --test"
   },
   "dependencies": {

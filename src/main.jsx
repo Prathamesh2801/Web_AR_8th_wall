@@ -4,6 +4,7 @@ import App from './App.jsx'
 import {preloadAssets} from './assets'
 import {BRAND, EXPERIENCE} from './config'
 import './index.css'
+import './pwa'
 import './fullscreen'
 
 // Start downloading every effect's files now, while the start screen is up (assets.js).

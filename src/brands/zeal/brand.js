@@ -49,6 +49,9 @@ export default {
     photoName: 'zeal-ar.jpg',
   },
 
+  /** Home-screen app (npm run generate-pwa -- zeal): icon art + its tile colour. */
+  app: {icon: 'logo.png', iconBackground: '#1C552A'}, // logo.png is white: on brand green
+
   nutrients: null,
 
   animations: {
@@ -155,8 +158,8 @@ export default {
         {file: 'photos/event-08.webp', caption: 'Beachside surf game'},
       ],
     },
-    // Elements "Arcade" (Badge Bash): all 8 printed badges are the holes (centres from
-    // make-sticker.mjs); the gold bonus coin pops off the Z logo (logoLift's print).
+    // Elements "Arcade" (Badge Bash): all 8 printed badges fly to the board (centres from
+    // make-sticker.mjs, where each one peels off); the gold bonus coin wears the Z mark.
     arcade: {
       targets: [
         {icon: 'cardboards', badge: {cx: 14.5, cy: 10.4}},
@@ -168,7 +171,7 @@ export default {
         {icon: 'radar-2', badge: {cx: 134, cy: 32.2}},
         {icon: 'robot', badge: {cx: 157.5, cy: 32.2}},
       ],
-      bonus: {cx: 86, cy: 12.9, mark: 'logo-mark.svg'},
+      bonus: {mark: 'logo-mark.svg'},
     },
     // The sticker's 8 service badges, scanned off the bottle.
     scan: {

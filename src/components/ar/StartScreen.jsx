@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react'
 
 import {onPreload} from '../../assets'
 import {EXPERIENCE} from '../../config'
+import {install, installMode, onInstallChange} from '../../pwa'
 import {BottleModel} from './BottleModel'
 
 /**
@@ -19,6 +20,54 @@ import {BottleModel} from './BottleModel'
  * The button doubles as the loading bar: every effect's files preload while this screen is
  * up (assets.js), and Start unlocks when they are in, so no effect downloads mid-AR.
  */
+const ShareIcon = () => (
+  <svg viewBox="0 0 24 24" className="inline h-4 w-4 -translate-y-px" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path d="M12 3v12M8 7l4-4 4 4" /><path d="M6 11v9h12v-9" />
+  </svg>
+)
+
+/**
+ * The home-screen app offer (pwa.js): Android = one tap (the system dialog); iPhone/iPad =
+ * the Add to Home Screen steps (iOS has no install API, and the home-screen app is its only
+ * true full screen). Nothing on desktop or once installed.
+ */
+const InstallOffer = () => {
+  const [mode, setMode] = useState(installMode)
+  const [open, setOpen] = useState(false)
+  useEffect(() => onInstallChange(() => setMode(installMode())), [])
+  if (!mode) return null
+  if (mode === 'android') {
+    return (
+      <button type="button" onClick={install}
+        className="mt-3 w-full rounded-full border border-white/20 py-3 text-sm font-semibold text-white/85 active:scale-[0.98]">
+        ⊕ Install app · full screen
+      </button>
+    )
+  }
+  return (
+    <div className="mt-3 rounded-2xl border border-white/15 bg-white/5 text-sm text-white/85">
+      <button type="button" aria-expanded={open}
+        onClick={(e) => {
+          const box = e.currentTarget.parentElement
+          setOpen(o => !o)
+          // Short phones: the steps open below the fold.
+          requestAnimationFrame(() => box.scrollIntoView({behavior: 'smooth', block: 'end'}))
+        }}
+        className="flex w-full items-center justify-between px-4 py-3 font-semibold">
+        <span>⊕ Add to Home Screen · full screen</span>
+        <span aria-hidden="true" className={`transition ${open ? 'rotate-180' : ''}`}>⌄</span>
+      </button>
+      {open && (
+        <ol className="list-decimal space-y-1.5 px-4 pb-4 pl-9 text-[13px] leading-snug text-white/75">
+          <li>Tap <span className="font-semibold text-white">Share</span> <ShareIcon /> in Safari (iPad: top right; iPhone: bottom bar, or <span className="font-semibold text-white">•••</span> then Share)</li>
+          <li>Choose <span className="font-semibold text-white">Add to Home Screen</span></li>
+          <li>Open <span className="font-semibold text-white">{EXPERIENCE.brand}</span> from your home screen</li>
+        </ol>
+      )}
+    </div>
+  )
+}
+
 const CORNERS = ['left-3 top-3 border-l-2 border-t-2 rounded-tl-xl', 'right-3 top-3 border-r-2 border-t-2 rounded-tr-xl',
   'left-3 bottom-3 border-l-2 border-b-2 rounded-bl-xl', 'right-3 bottom-3 border-r-2 border-b-2 rounded-br-xl']
 
@@ -103,6 +152,7 @@ export const StartScreen = ({onStart, unsupportedReason}) => {
             </svg>
             Nothing is recorded or uploaded.
           </p>
+          <InstallOffer />
         </div>
       )}
     </div>
