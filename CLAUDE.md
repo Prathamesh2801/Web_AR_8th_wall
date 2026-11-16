@@ -30,7 +30,7 @@ src/config.js         THE tuning file: active brand (DEFAULT_BRAND / ?brand=), s
 src/brands/           one folder per product/brand: brand.js (bottle mm, label, targets, copy, effect content) + data. README = how to add one
   index.js              registry {id: brand}
 src/ar/               engine + three.js. NO React imports in this folder.
-  startAR.js            loads targets, configures XR8, registers pipeline modules
+  startAR.js            loads targets, configures XR8, registers pipeline modules; own full-screen canvas module (not XRExtras.FullWindowCanvas: it painted iOS white, sized to innerHeight = one status bar short in the iOS home-screen app, and capped the canvas at camera res = soft 3D); start-up watchdog
   imageTargetPipelineModule.js   image events -> lead target -> bottleScene + store
   leadTarget.js         picks which of the overlapping label crops drives the pose (+ test)
   bottleScene.js        anchor, pose smoothing, occlusion, runs animations, tap picking; a press that moves = swipe -> active effects' optional drag(dx)/release(); warms every built effect while hidden (textures uploaded + compileAsync) so switching to one never stalls

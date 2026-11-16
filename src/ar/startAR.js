@@ -11,6 +11,7 @@ import * as THREE from 'three'
 
 import {fetchAsset} from '../assets'
 import {BRAND, TRACKING, brandFile} from '../config'
+import {isIOS, isInstalled} from '../pwa'
 import {CAMERA_SAMPLE_PX} from './cameraLight'
 import {createImageTargetPipelineModule} from './imageTargetPipelineModule'
 import {trackingStore} from './trackingStore'
@@ -49,6 +50,45 @@ const loadTargets = async () => {
 }
 
 let started = false
+
+/*
+ * Canvas sizing, in place of XRExtras.FullWindowCanvas, which on iOS (a) painted the page
+ * body WHITE, (b) sized the canvas to innerHeight, and in an iOS home-screen app that is one
+ * status bar (~59 pt) short of the screen, because the page starts UNDER the status bar
+ * (black-translucent): a white bar at the bottom; and (c) capped the canvas at the camera's
+ * resolution (~720p), so the 3D rendered soft and was stretched. Here the canvas covers the
+ * real screen at the device's pixel ratio, long side capped at MAX_PX for frame rate.
+ */
+const MAX_PX = 1920
+const fullScreenCanvas = () => {
+  let canvas = null
+  let cssH = ''
+  // three's renderer.setSize() (the engine's Threejs module, on every size change) writes
+  // the PIXEL size into canvas.style: put the CSS size back (XRExtras did the same).
+  const restyle = () => {
+    if (canvas.style.width !== '100%') canvas.style.width = '100%'
+    if (canvas.style.height !== cssH) canvas.style.height = cssH
+  }
+  const fit = () => {
+    if (!canvas) return
+    const w = innerWidth
+    const portrait = innerHeight >= innerWidth
+    // iOS screen.* don't rotate: the long side in portrait, the short in landscape.
+    const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height)
+    const h = isIOS && isInstalled() ? Math.max(innerHeight, screenH) : innerHeight
+    const k = Math.min(devicePixelRatio || 1, 2, MAX_PX / Math.max(w, h))
+    cssH = `${h}px`
+    restyle()
+    canvas.width = Math.round(w * k)
+    canvas.height = Math.round(h * k)
+  }
+  return {
+    name: 'fullScreenCanvas',
+    onAttach: ({canvas: c}) => { canvas = c; fit(); addEventListener('resize', fit) },
+    onDetach: () => { removeEventListener('resize', fit); canvas = null },
+    onUpdate: () => { if (canvas) restyle() },
+  }
+}
 
 /*
  * Start-up watchdog: the steps reached so far, and a timer that turns an endless loading
@@ -220,12 +260,12 @@ export const startAR = async (canvas) => {
       XR8.Threejs.pipelineModule(),            // Creates the three.js scene.
       XR8.XrController.pipelineModule(),       // Drives tracking + image targets.
       XR8.CanvasScreenshot.pipelineModule(),   // Photo capture: camera + 3D in one frame.
+      fullScreenCanvas(),                      // Canvas = the real screen (see above).
       // A 16 px copy of each camera frame: the room's light for lit effects (cameraLight.js).
       XR8.CameraPixelArray.pipelineModule({maxDimension: CAMERA_SAMPLE_PX}),
       ...(landingPage ? [landingPage.pipelineModule()] : []),  // Unsupported-browser handling.
       ...(extras
         ? [
-          extras.FullWindowCanvas.pipelineModule(),  // Sizes the canvas to the window.
           extras.Loading.pipelineModule(),           // Camera-permission / loading screen.
           extras.RuntimeError.pipelineModule(),      // Shows runtime errors instead of a blank page.
         ]
