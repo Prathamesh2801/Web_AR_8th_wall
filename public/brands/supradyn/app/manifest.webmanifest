@@ -5,10 +5,9 @@
   "description": "Bring your product to life.",
   "start_url": "/?brand=supradyn",
   "scope": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "display_override": [
-    "fullscreen",
-    "standalone"
+    "fullscreen"
   ],
   "orientation": "portrait",
   "background_color": "#0a0a0a",

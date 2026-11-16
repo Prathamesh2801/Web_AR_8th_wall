@@ -50,6 +50,37 @@ const loadTargets = async () => {
 
 let started = false
 
+/*
+ * Start-up watchdog: the steps reached so far, and a timer that turns an endless loading
+ * screen into an error naming the last step (the iPad home-screen app hung after its
+ * permission prompts with no clue where). Cleared by the first camera frame.
+ */
+const STALL_MS = 25000 // with NO new step: long enough to read + answer a permission prompt
+const steps = []
+let stallTimer = null
+const stalled = () => {
+  // Unsupported browser (desktop): the engine's own landing page is the answer, not this.
+  if (window.XR8?.XrDevice?.isDeviceBrowserCompatible?.() === false) return
+  trackingStore.setError(`The camera didn't start (last steps: ${steps.slice(-4).join(' -> ') || 'none'}). ` +
+    'Reload to try again; if it keeps happening, open the page in Safari / Chrome instead.')
+}
+const step = (s) => {
+  steps.push(s)
+  console.log('[AR] start:', s)
+  if (stallTimer !== null) { clearTimeout(stallTimer); stallTimer = setTimeout(stalled, STALL_MS) }
+}
+const watchdog = {
+  name: 'startWatchdog',
+  onCameraStatusChange: ({status}) => step(`camera ${status}`),
+  onException: (err) => step(`engine error: ${err?.message ?? err}`),
+  onUpdate: () => {
+    if (stallTimer === null) return
+    clearTimeout(stallTimer)
+    stallTimer = null
+    steps.push('first frame')
+  },
+}
+
 /**
  * Resolves once the engine is genuinely usable.
  *
@@ -141,6 +172,8 @@ export const takePhoto = async () =>
 export const startAR = async (canvas) => {
   if (started) return
   started = true
+  stallTimer = setTimeout(stalled, STALL_MS)
+  addEventListener('error', e => step(`page error: ${e.message}`))
 
   try {
     const support = checkSupport()
@@ -157,8 +190,10 @@ export const startAR = async (canvas) => {
       return
     }
     console.log('[AR] loaded targets', targets.map(t => t.name))
+    step('targets loaded')
 
     await waitForXR8()
+    step('engine ready')
 
     // Image targets must be configured before/at run time.
     // `imageTargetData` is the CURRENT field name used by the open-source engine and the
@@ -196,6 +231,7 @@ export const startAR = async (canvas) => {
         ]
         : []),
       createImageTargetPipelineModule(targets.map(t => t.name)),
+      watchdog,
     ])
 
     if (!extras) {
@@ -203,7 +239,10 @@ export const startAR = async (canvas) => {
     }
 
     XR8.run({canvas})
+    step('engine run')
   } catch (err) {
+    clearTimeout(stallTimer)
+    stallTimer = null
     console.error('[AR] failed to start', err)
     // Surface the real cause; camera permission denial lands here as NotAllowedError.
     const message = err?.name === 'NotAllowedError'

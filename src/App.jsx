@@ -49,6 +49,12 @@ export default function App() {
       console.error('[AR] #camerafeed canvas not found')
       return
     }
+    // iOS: motion/orientation access can only be asked inside a tap. The engine asks for it
+    // itself, but after async work (targets load first), so the tap is over: iOS refuses and
+    // the engine falls back to its own retry prompt. A home-screen app has its own
+    // permissions (not Safari's), so it hit that path on every fresh install. Ask here,
+    // synchronously, before anything awaits; the engine then finds it granted.
+    for (const E of [window.DeviceMotionEvent, window.DeviceOrientationEvent]) E?.requestPermission?.().catch(() => {})
     unlockSound()
     setStarted(true)
     startAR(canvas)

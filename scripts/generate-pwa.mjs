@@ -65,10 +65,11 @@ const manifest = {
   description: brand.experience.headline,
   start_url: `/?brand=${id}`,
   scope: '/',
-  // fullscreen on Android hides the status bar too (the camera fills the screen); iOS
-  // treats it as standalone, which is still edge to edge with no Safari bars.
-  display: 'fullscreen',
-  display_override: ['fullscreen', 'standalone'],
+  // Android reads display_override: fullscreen (no status bar, the camera fills the
+  // screen). iOS ignores display_override and has no fullscreen: give it standalone
+  // explicitly rather than rely on its fallback.
+  display: 'standalone',
+  display_override: ['fullscreen'],
   orientation: 'portrait',
   background_color: '#0a0a0a',
   theme_color: '#0a0a0a',
