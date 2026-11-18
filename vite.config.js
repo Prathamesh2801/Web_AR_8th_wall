@@ -18,4 +18,11 @@ export default defineConfig({
     strictPort: true, // the forwarded port points at 5173; another port would 502
     ...(tunnel && {allowedHosts: ['.devtunnels.ms'], hmr: {clientPort: 443}}),
   },
+  // `npm run tunnel -- --preview <url>`: the production build behind the forwarded port 4173.
+  preview: {
+    host: true,
+    port: 4173,
+    strictPort: true,
+    ...(tunnel && {allowedHosts: ['.devtunnels.ms']}),
+  },
 })

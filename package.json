@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "generate-targets": "node scripts/generate-targets.mjs",
     "generate-pwa": "node scripts/generate-pwa.mjs",
+    "qr": "node -e \"const u=process.argv[1];u?require('qrcode-terminal').generate(u,{small:true}):console.log('usage: npm run qr -- <link>')\"",
     "test": "node --test"
   },
   "dependencies": {

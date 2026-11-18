@@ -9,9 +9,11 @@ open-source 8th Wall engine (2026). No backend, no account, no API keys, **no `.
 ```bash
 npm run dev               # HTTPS dev server on the LAN (camera needs HTTPS) â€” open the Network URL on a phone
 npm run tunnel -- <url>   # HTTP dev server behind a VS Code forwarded port (real HTTPS, no cert warning) + QR in the terminal; URL remembered in .tunnel-url.local
+npm run tunnel -- --preview <url>  # same for the PRODUCTION build (build + preview on 4173): test the iOS home-screen app with this. Plain `npm run preview` behind a tunnel = white page (mkcert HTTPS + host block)
 npm run build             # production build to dist/
 npm run lint              # oxlint
 npm test                  # node --test (src/**/*.test.js)
+npm run qr -- <link>               # any link as a QR code in the terminal (share the app: scan with a phone camera)
 npm run generate-pwa -- <brand>      # home-screen app: public/brands/<brand>/app/ (4 icons + manifest) from the brand file's `app.icon`
 npm run generate-targets -- <brand>  # rebuild public/brands/<brand>/targets/* from its flat label PNG
 node scripts/prepare-photos.mjs <out-dir> <photo...>  # event photos -> Photo Burst prints: whole photo, never cropped (each polaroid takes its shape), longest side 1000 px WebP, named event-01.. in the given order
